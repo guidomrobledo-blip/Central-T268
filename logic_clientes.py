@@ -1,4 +1,3 @@
-%%writefile logic_clientes.py
 import pandas as pd
 import re
 from datetime import datetime, timedelta
@@ -128,3 +127,4 @@ def generar_pdf_clientes(df, fecha_tit):
         if pdf.page_no() <= 2: break
         font_size -= 0.5; row_height -= 0.3
     return bytes(pdf.output())
+
