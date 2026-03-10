@@ -11,7 +11,7 @@ st.set_page_config(page_title="Central Logística T268", layout="wide")
 st.title("🛒 Central Logística T268")
 st.markdown("---")
 
-# 📁 CARGA DE ARCHIVO (Siempre arriba)
+# 📁 CARGA DE ARCHIVO
 uploaded_file = st.file_uploader("Sube el Excel de CDP", type=["xlsx"])
 
 st.markdown("---")
@@ -33,8 +33,16 @@ with col5:
 
 # ⚙️ LÓGICA DE PROCESAMIENTO
 if uploaded_file:
+    # Leemos el Excel para verificar datos
     df = pd.read_excel(uploaded_file)
     
+    # Intentar obtener la fecha del Excel (asumiendo que está en una columna llamada 'Fecha')
+    # Si la columna tiene otro nombre, lo ajustaremos luego.
+    fecha_excel = None
+    if 'Fecha' in df.columns:
+        fecha_excel = pd.to_datetime(df['Fecha']).dt.date.iloc[0]
+
+    # --- Lógica de los botones ---
     if btn_1:
         descargar_clientes(df)
     
@@ -45,13 +53,22 @@ if uploaded_file:
         descargar_domicilios(df)
         
     if btn_4:
-        # Aquí aplicaremos la lógica de fecha en el siguiente paso
-        descargar_informe(df)
+        # VALIDACIÓN DE FECHA (Mañana = Hoy + 1)
+        hoy = datetime.now().date()
+        manana = hoy + timedelta(days=1)
+        
+        if fecha_excel == manana:
+            descargar_informe(df)
+            st.success(f"Informe generado para la fecha: {manana}")
+        else:
+            st.error("⚠️ Informe solo procesa pedidos del día siguiente.")
+            st.info(f"Fecha detectada en Excel: {fecha_excel} | Fecha requerida: {manana}")
         
     if btn_5:
-        st.success("Planilla MEC procesada (pendiente de lógica específica)")
+        st.info("Procesando Planilla MEC...")
+        # Aquí irá la lógica específica del botón 5
 
 else:
-    # Si alguien toca un botón sin subir archivo
+    # Mensaje si presionan botones sin archivo
     if btn_1 or btn_2 or btn_3 or btn_4 or btn_5:
-        st.warning("⚠️ Primero debes subir el archivo Excel del CDP.")
+        st.warning("⚠️ Primero debes subir el archivo Excel del CDP para ejecutar esta acción.")
