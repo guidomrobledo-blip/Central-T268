@@ -1,4 +1,3 @@
-%%writefile logic_faltantes.py
 import pandas as pd
 from fpdf import FPDF
 import os
@@ -81,3 +80,4 @@ def generar_pdf_faltantes(df, fecha_tit):
     pdf.multi_cell(sum(widths), 5, nota, border=0, align='L')
 
     return bytes(pdf.output())
+
