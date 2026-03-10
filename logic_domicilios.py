@@ -1,4 +1,3 @@
-%%writefile logic_domicilios.py
 import pandas as pd
 from fpdf import FPDF
 import os
@@ -99,3 +98,4 @@ def generar_pdf_domicilios(df, fecha_tit):
         pdf.ln(2)
 
     return bytes(pdf.output())
+
