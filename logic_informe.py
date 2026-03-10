@@ -1,4 +1,3 @@
-%%writefile logic_informe.py
 import pandas as pd
 from fpdf import FPDF
 import os
@@ -125,3 +124,4 @@ def generar_pdf_informe(df, obs_usuario):
         pdf.multi_cell(0, 5, obs_usuario, "LBR", 'L')
 
     return bytes(pdf.output())
+
