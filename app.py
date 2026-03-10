@@ -1,4 +1,3 @@
-%%writefile app.py
 import streamlit as st
 import pandas as pd
 import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
@@ -61,3 +60,4 @@ if archivo:
             mime="application/pdf",
             use_container_width=True
         )
+
