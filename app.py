@@ -280,25 +280,26 @@ with col_der:
         data = [{"lng": -60.6505, "lat": -32.9442}]
     
     st.pydeck_chart(pdk.Deck(
-        map_style='https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+        # MAPA 2D COLORIDO (Sin relieve 3D)
+        map_style='https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
         initial_view_state=view_state,
         layers=[
-            # Capa de marcador (Punto Rojo con Borde Blanco)
-            pdk.Layer(
-                "ScatterplotLayer",
-                data=data,
-                get_position='[lng, lat]',
-                get_fill_color='[255, 0, 0, 255]',  # Rojo sólido
-                get_radius=15,  # Tamaño del punto
-                pickable=True,
-            ),
-            # Capa de borde blanco para mejor visibilidad
+            # Capa 1: Borde blanco (debajo)
             pdk.Layer(
                 "ScatterplotLayer",
                 data=data,
                 get_position='[lng, lat]',
                 get_fill_color='[255, 255, 255, 255]',  # Blanco
                 get_radius=20,  # Un poco más grande
+                pickable=True,
+            ),
+            # Capa 2: Punto rojo (encima - para que se vea)
+            pdk.Layer(
+                "ScatterplotLayer",
+                data=data,
+                get_position='[lng, lat]',
+                get_fill_color='[255, 0, 0, 255]',  # Rojo sólido
+                get_radius=15,  # Tamaño del punto
                 pickable=True,
             )
         ]
