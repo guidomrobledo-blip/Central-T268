@@ -1,62 +1,72 @@
 import streamlit as st
 import pandas as pd
-import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
+from datetime import datetime, timedelta
+from logic_clientes import descargar_clientes
+from logic_faltantes import descargar_faltantes
+from logic_domicilios import descargar_domicilios
+from logic_informe import descargar_informe
 
-st.set_page_config(page_title="Central T268", layout="wide")
-
-st.markdown("<style>div.stButton > button:first-child, div.stLinkButton > a {height: 3em; font-weight: bold; display: flex; align-items: center; justify-content: center; text-decoration: none;}</style>", unsafe_allow_html=True)
+st.set_page_config(page_title="Central Logística T268", layout="wide")
 
 st.title("🛒 Central Logística T268")
+st.markdown("---")
 
-if 'mostrar_informe' not in st.session_state:
-    st.session_state.mostrar_informe = False
+# 1. CARGA DE ARCHIVO (Siempre al principio)
+uploaded_file = st.file_uploader("Sube el Excel de CDP", type=["xlsx"])
 
-archivo = st.file_uploader("Cargar Excel CDP", type=["xlsx"])
+st.markdown("---")
 
-if archivo:
-    df_raw = pd.read_excel(archivo)
-    df_clean, fecha_tit = logic_clientes.motor_limpieza(df_raw)
+# 2. PANEL DE BOTONES (VISIBLES SIEMPRE)
+st.subheader("Acciones Disponibles")
+col1, col2, col3, col4, col5 = st.columns(5)
 
-    st.divider()
-    c1, c2, c3, c4, c5 = st.columns(5)
+with col1:
+    btn_1 = st.button("1. CLIENTES", use_container_width=True)
+with col2:
+    btn_2 = st.button("2. FALTANTES", use_container_width=True)
+with col3:
+    btn_3 = st.button("3. DOMICILIOS", use_container_width=True)
+with col4:
+    btn_4 = st.button("4. INFORME", use_container_width=True)
+with col5:
+    btn_5 = st.button("5. PLANILLA MEC", use_container_width=True)
 
-    with c1:
-        if st.button("🟢 1. CLIENTES", use_container_width=True):
-            st.session_state.mostrar_informe = False
-            pdf = logic_clientes.generar_pdf_clientes(df_clean, fecha_tit)
-            st.download_button("📥 Descargar", bytes(pdf), f"Clientes_{fecha_tit}.pdf")
+# 3. LÓGICA DE PROCESAMIENTO
+if uploaded_file:
+    df = pd.read_excel(uploaded_file)
+    
+    # --- EJECUCIÓN SEGÚN BOTÓN ---
+    if btn_1:
+        descargar_clientes(df)
+    
+    if btn_2:
+        descargar_faltantes(df)
+        
+    if btn_3:
+        descargar_domicilios(df)
+        
+    if btn_4:
+        # VALIDACIÓN DE FECHA PARA INFORME
+        # Asumiendo que la columna se llama 'Fecha'
+        if 'Fecha' in df.columns:
+            fecha_excel = pd.to_datetime(df['Fecha']).dt.date.iloc[0]
+            hoy = datetime.now().date()
+            manana = hoy + timedelta(days=1)
+            
+            if fecha_excel == manana:
+                descargar_informe(df)
+            else:
+                st.error("⚠️ Informe solo procesa pedidos del día siguiente.")
+                st.info(f"Fecha en Excel: {fecha_excel} | Se requiere: {manana}")
+        else:
+            # Si no hay columna fecha, dejamos pasar o avisamos
+            st.warning("No se detectó columna 'Fecha' para validar. Procesando...")
+            descargar_informe(df)
+            
+    if btn_5:
+        st.success("Planilla MEC lista para configurar.")
 
-    with c2:
-        if st.button("🔵 2. FALTANTES", use_container_width=True):
-            st.session_state.mostrar_informe = False
-            pdf = logic_faltantes.generar_pdf_faltantes(df_clean, fecha_tit)
-            st.download_button("📥 Descargar", bytes(pdf), f"Faltantes_{fecha_tit}.pdf")
-
-    with c3:
-        if st.button("🟡 3. DOMICILIOS", use_container_width=True):
-            st.session_state.mostrar_informe = False
-            pdf = logic_domicilios.generar_pdf_domicilios(df_clean, fecha_tit)
-            st.download_button("📥 Descargar", bytes(pdf), f"Ruta_{fecha_tit}.pdf")
-
-    with c4:
-        if st.button("🟠 4. INFORME", use_container_width=True):
-            st.session_state.mostrar_informe = True
-
-    with c5:
-        # Botón 5: Ahora es un Link Button funcional
-        st.link_button("🌐 5. PLANILLA MEC",
-                       "https://docs.google.com/spreadsheets/d/1v0Rls8fg_uIGfhA1t3CzINq3VfAUvPY3DY8_m_ZSmM8/edit?gid=0#gid=0",
-                       use_container_width=True)
-
-    if st.session_state.mostrar_informe:
-        st.info("Configuración del Informe de Estado")
-        obs = st.text_area("📝 Escriba las OBSERVACIONES:", placeholder="Escriba aquí...")
-
-        pdf_bytes = logic_informe.generar_pdf_informe(df_clean, obs)
-        st.download_button(
-            label="🚀 GENERAR Y DESCARGAR INFORME",
-            data=pdf_bytes,
-            file_name=f"Informe_{fecha_tit}.pdf",
-            mime="application/pdf",
-            use_container_width=True
-        )
+else:
+    # Si tocan botones sin haber subido el archivo
+    if btn_1 or btn_2 or btn_3 or btn_4 or btn_5:
+        st.warning("⚠️ Por favor, sube primero el archivo Excel del CDP.")
