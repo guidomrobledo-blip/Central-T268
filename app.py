@@ -12,7 +12,7 @@ st.title("🛒 Central Logística T268")
 if 'mostrar_informe' not in st.session_state:
     st.session_state.mostrar_informe = False
 
-# 📁 CARGA DE ARCHIVO (Siempre visible arriba)
+# 📁 CARGA DE ARCHIVO
 archivo = st.file_uploader("Cargar Excel CDP", type=["xlsx"])
 
 st.divider()
@@ -26,7 +26,7 @@ with c2:
     btn_2 = st.button("🔵 2. FALTANTES", use_container_width=True)
 with c3:
     btn_3 = st.button("🟡 3. DOMICILIOS", use_container_width=True)
-with col4_informe := c4: # Usamos un contenedor para el botón 4
+with c4:
     btn_4 = st.button("🟠 4. INFORME", use_container_width=True)
 with c5:
     st.link_button("🌐 5. PLANILLA MEC", 
@@ -54,24 +54,21 @@ if archivo:
         st.download_button("📥 Descargar Ruta", bytes(pdf), f"Ruta_{fecha_tit}.pdf")
 
     if btn_4:
-        # VALIDACIÓN DE FECHA: Mañana = Hoy + 1
+        # VALIDACIÓN DE FECHA
         hoy = datetime.now().date()
         manana = hoy + timedelta(days=1)
         
-        # Intentamos convertir la fecha que extrajo tu motor_limpieza
         try:
-            # fecha_tit suele venir como string 'DD-MM-AAAA' según tu lógica
+            # Convertimos la fecha del archivo (DD-MM-AAAA) a objeto fecha
             fecha_archivo = datetime.strptime(fecha_tit, "%d-%m-%Y").date()
             
             if fecha_archivo == manana:
                 st.session_state.mostrar_informe = True
             else:
-                st.error("⚠️ El Informe solo procesa pedidos del día siguiente.")
-                st.info(f"Fecha en archivo: {fecha_tit} | Requerida: {manana.strftime('%d-%m-%Y')}")
+                st.error("⚠️ Informe solo procesa pedidos del día siguiente")
+                st.info(f"Fecha archivo: {fecha_tit} | Requerida: {manana.strftime('%d-%m-%Y')}")
                 st.session_state.mostrar_informe = False
         except:
-            # Si falla la conversión, permitimos por seguridad pero avisamos
-            st.warning("No se pudo validar la fecha automáticamente.")
             st.session_state.mostrar_informe = True
 
     if st.session_state.mostrar_informe:
@@ -86,6 +83,6 @@ if archivo:
             use_container_width=True
         )
 else:
-    # Si alguien presiona un botón de proceso sin haber cargado el Excel
+    # Mensaje si presionan botones sin archivo
     if btn_1 or btn_2 or btn_3 or btn_4:
         st.warning("⚠️ Primero debes cargar el archivo Excel del CDP.")
