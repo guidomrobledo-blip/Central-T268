@@ -674,51 +674,160 @@ with col_der:
     st.markdown('<div class="glass-card glass-card-green" style="min-height: 520px;">', unsafe_allow_html=True)
     st.markdown('<div class="card-title"><span class="card-icon">📈</span> PANEL DE VISUALIZACION DE VENTAS ONLINE</div>', unsafe_allow_html=True)
     
+    # Calcular fechas de la semana actual
+    inicio_semana = hoy_ar - timedelta(days=hoy_ar.weekday())
+    fin_semana = inicio_semana + timedelta(days=6)
+    rango_semana = f"Semana {inicio_semana.strftime('%d-%b')} al {fin_semana.strftime('%d-%b')}"
+    
+    # Calcular inicio del mes para el acumulado mensual
+    inicio_mes = hoy_ar.replace(day=1)
+    
     if archivo_cdp:
-        total_pedidos = len(df_clean)
+        total_pedidos_dia = len(df_clean)
+        
+        # Calcular pedidos acumulados del mes (simulado - en produccion vendria de BD)
+        # Por ahora usamos el total del dia * dias transcurridos como aproximacion
+        dias_transcurridos = (hoy_ar - inicio_mes).days + 1
+        total_pedidos_mes = total_pedidos_dia * dias_transcurridos  # Esto deberia venir de tu BD real
         
         # Contadores Neon personalizados
         col_n1, col_n2 = st.columns(2)
         with col_n1:
             st.markdown(f'''
                 <div style="text-align: center; padding: 20px;">
-                    <div class="neon-counter neon-counter-green">{total_pedidos}</div>
-                    <div class="neon-counter-label">Total Pedidos</div>
+                    <div class="neon-counter neon-counter-green">{total_pedidos_dia}</div>
+                    <div class="neon-counter-label">Pedidos del Dia</div>
                 </div>
             ''', unsafe_allow_html=True)
         with col_n2:
             st.markdown(f'''
                 <div style="text-align: center; padding: 20px;">
-                    <div class="neon-counter neon-counter-blue">T268</div>
-                    <div class="neon-counter-label">Tienda Rosario</div>
+                    <div class="neon-counter neon-counter-blue">{total_pedidos_mes}</div>
+                    <div class="neon-counter-label">Total Pedidos del Mes</div>
                 </div>
             ''', unsafe_allow_html=True)
         
         st.write("")
         
-        # Grafico
+        # Grafico mejorado con fechas de la semana
+        st.markdown(f'''
+            <div style="text-align: center; margin-bottom: 15px;">
+                <span style="color: rgba(255,255,255,0.6); font-size: 0.9em; letter-spacing: 2px; text-transform: uppercase;">
+                    {rango_semana}
+                </span>
+            </div>
+        ''', unsafe_allow_html=True)
+        
+        # Generar fechas reales de la semana
+        dias_semana = []
+        for i in range(7):
+            dia = inicio_semana + timedelta(days=i)
+            dias_semana.append(dia.strftime('%a %d'))
+        
         chart_data = pd.DataFrame({
-            'Dia': ['Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab', 'Dom'],
+            'Dia': dias_semana,
             'Pedidos': np.random.randint(40, 120, 7)
         })
-        st.bar_chart(chart_data.set_index('Dia'), color="#00ffcc")
+        
+        # Usar Altair para grafico con fondo oscuro
+        import altair as alt
+        
+        chart = alt.Chart(chart_data).mark_bar(
+            cornerRadiusTopLeft=6,
+            cornerRadiusTopRight=6,
+            color='#00ffcc'
+        ).encode(
+            x=alt.X('Dia:N', sort=None, axis=alt.Axis(
+                labelColor='rgba(255,255,255,0.7)',
+                titleColor='rgba(255,255,255,0.5)',
+                labelAngle=0,
+                labelFontSize=11,
+                title=None
+            )),
+            y=alt.Y('Pedidos:Q', axis=alt.Axis(
+                labelColor='rgba(255,255,255,0.7)',
+                titleColor='rgba(255,255,255,0.5)',
+                gridColor='rgba(255,255,255,0.1)',
+                title=None
+            )),
+            tooltip=['Dia', 'Pedidos']
+        ).properties(
+            height=280
+        ).configure(
+            background='transparent'
+        ).configure_view(
+            strokeWidth=0
+        )
+        
+        st.altair_chart(chart, use_container_width=True)
         
     else:
         st.info("Suba un archivo CDP para visualizar las metricas del dia")
         
         # Demo visual
-        st.markdown('''
-            <div style="text-align: center; padding: 40px;">
-                <div class="neon-counter" style="font-size: 2.5em; opacity: 0.5;">---</div>
-                <div class="neon-counter-label">Esperando datos...</div>
+        col_n1, col_n2 = st.columns(2)
+        with col_n1:
+            st.markdown('''
+                <div style="text-align: center; padding: 20px;">
+                    <div class="neon-counter neon-counter-green" style="opacity: 0.4;">--</div>
+                    <div class="neon-counter-label">Pedidos del Dia</div>
+                </div>
+            ''', unsafe_allow_html=True)
+        with col_n2:
+            st.markdown('''
+                <div style="text-align: center; padding: 20px;">
+                    <div class="neon-counter neon-counter-blue" style="opacity: 0.4;">--</div>
+                    <div class="neon-counter-label">Total Pedidos del Mes</div>
+                </div>
+            ''', unsafe_allow_html=True)
+        
+        st.markdown(f'''
+            <div style="text-align: center; margin: 20px 0;">
+                <span style="color: rgba(255,255,255,0.4); font-size: 0.9em; letter-spacing: 2px;">
+                    {rango_semana}
+                </span>
             </div>
         ''', unsafe_allow_html=True)
         
+        # Grafico demo con Altair
+        import altair as alt
+        
+        dias_semana = []
+        for i in range(7):
+            dia = inicio_semana + timedelta(days=i)
+            dias_semana.append(dia.strftime('%a %d'))
+        
         demo_data = pd.DataFrame({
-            'Semana': ['S1', 'S2', 'S3', 'S4'],
-            'Ventas': [65, 78, 90, 85]
+            'Dia': dias_semana,
+            'Pedidos': [65, 78, 90, 85, 72, 45, 38]
         })
-        st.area_chart(demo_data.set_index('Semana'), color="#00d4ff")
+        
+        chart = alt.Chart(demo_data).mark_bar(
+            cornerRadiusTopLeft=6,
+            cornerRadiusTopRight=6,
+            color='#00ffcc',
+            opacity=0.5
+        ).encode(
+            x=alt.X('Dia:N', sort=None, axis=alt.Axis(
+                labelColor='rgba(255,255,255,0.4)',
+                labelAngle=0,
+                labelFontSize=11,
+                title=None
+            )),
+            y=alt.Y('Pedidos:Q', axis=alt.Axis(
+                labelColor='rgba(255,255,255,0.4)',
+                gridColor='rgba(255,255,255,0.05)',
+                title=None
+            ))
+        ).properties(
+            height=250
+        ).configure(
+            background='transparent'
+        ).configure_view(
+            strokeWidth=0
+        )
+        
+        st.altair_chart(chart, use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- FOOTER ---
