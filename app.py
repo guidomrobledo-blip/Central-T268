@@ -22,26 +22,32 @@ hoy_ar = fecha_ar_ahora.date()
 manana_ar_obj = hoy_ar + timedelta(days=1)
 manana_txt = manana_ar_obj.strftime("%d/%m/%Y")
 
-# --- GEOCODIFICACIÓN (Para el buscador) ---
-def geocodificar_direccion(direccion):
+# --- GEOCODIFICACIÓN ROSARIO EXCLUSIVA ---
+def geocodificar_rosario(direccion):
     """
-    Geocodifica una dirección usando Nominatim (OpenStreetMap)
+    Geocodifica una dirección restringida a Rosario, Santa Fe
     Retorna: (latitud, longitud) o None si no encuentra
     """
     if not direccion or len(direccion.strip()) < 3:
         return None
     
     try:
-        url = f"https://nominatim.openstreetmap.org/search?format=json&q={direccion}&countrycodes=ar"
+        # Añadimos "Rosario, Santa Fe, Argentina" para restringir la búsqueda
+        direccion_completa = f"{direccion}, Rosario, Santa Fe, Argentina"
+        
+        url = f"https://nominatim.openstreetmap.org/search?format=json&q={direccion_completa}&countrycodes=ar&addressdetails=1"
         response = requests.get(url, headers={"User-Agent": "CentralLogisticaT268/1.0"})
         data = response.json()
         
         if data and len(data) > 0:
-            return {
-                "lat": float(data[0]["lat"]),
-                "lon": float(data[0]["lon"]),
-                "display_name": data[0]["display_name"]
-            }
+            # Verificamos que el resultado sea de Rosario
+            display_name = data[0].get("display_name", "")
+            if "Rosario" in display_name:
+                return {
+                    "lat": float(data[0]["lat"]),
+                    "lon": float(data[0]["lon"]),
+                    "display_name": display_name
+                }
     except Exception as e:
         st.error(f"Error al geocodificar: {str(e)}")
     
@@ -146,6 +152,24 @@ st.markdown("""
         margin-top: 10px;
         font-size: 0.9em;
     }
+    
+    .search-error {
+        background-color: #fee2e2;
+        border-left: 4px solid #ef4444;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 0.9em;
+    }
+    
+    .search-info {
+        background-color: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 0.9em;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -208,9 +232,10 @@ with col_izq:
 with col_der:
     st.markdown('<span class="card-label">🗺️ NAVEGACIÓN Y MONITOREO ROSARIO</span>', unsafe_allow_html=True)
     
-    # --- BUSCADOR DE DIRECCIONES ---
-    st.markdown("**🔍 Buscar Dirección**")
-    direc = st.text_input("", placeholder="Ej: Bv. Oroño y Pellegrini, Rosario", key="map_search")
+    # --- BUSCADOR DE DIRECCIONES (ROSARIO EXCLUSIVO) ---
+    st.markdown("**🔍 Buscar Dirección en Rosario**")
+    st.markdown('<div class="search-info">📍 Solo direcciones de Rosario, Santa Fe</div>', unsafe_allow_html=True)
+    direc = st.text_input("", placeholder="Ej: Bv. Oroño 1234, Rosario", key="map_search")
     
     # Estado para guardar la ubicación encontrada
     if 'map_location' not in st.session_state:
@@ -219,7 +244,7 @@ with col_der:
     # Al presionar Enter (el input de Streamlit lo detecta automáticamente)
     if direc and st.session_state.map_location != direc:
         st.session_state.map_location = direc
-        result = geocodificar_direccion(direc)
+        result = geocodificar_rosario(direc)
         
         if result:
             st.session_state.map_coords = {
@@ -228,7 +253,7 @@ with col_der:
             }
             st.markdown(f'<div class="search-result">✅ {result["display_name"]}</div>', unsafe_allow_html=True)
         else:
-            st.error("❌ No se encontró esa dirección. Intenta ser más específico.")
+            st.markdown(f'<div class="search-error">❌ No se encontró esa dirección en Rosario. Intenta ser más específico (ej: "Bv. Oroño y Pellegrini")</div>', unsafe_allow_html=True)
             st.session_state.map_coords = None
 
     # --- MAPA ---
@@ -264,16 +289,6 @@ with col_der:
                 get_position='[lng, lat]',
                 get_color='[0, 56, 118, 200]',
                 get_radius=300,
-            ),
-            # Capa de etiquetas de calles (mejor visibilidad)
-            pdk.Layer(
-                "TextLayer",
-                data=data,
-                get_text='[lng, lat]',
-                get_size=12,
-                get_color='[255, 255, 255, 200]',
-                get_alignment='center',
-                get_baseline='middle',
             )
         ]
     ))
