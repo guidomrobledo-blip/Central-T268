@@ -5,6 +5,8 @@ import pydeck as pdk
 from datetime import datetime, timedelta
 import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
 import os
+import requests
+import json
 
 # --- CONFIGURACIÓN ---
 st.set_page_config(
@@ -20,19 +22,41 @@ hoy_ar = fecha_ar_ahora.date()
 manana_ar_obj = hoy_ar + timedelta(days=1)
 manana_txt = manana_ar_obj.strftime("%d/%m/%Y")
 
-# --- CSS MEJORADO (Diseño Elegante y Profesional) ---
+# --- GEOCODIFICACIÓN (Para el buscador) ---
+def geocodificar_direccion(direccion):
+    """
+    Geocodifica una dirección usando Nominatim (OpenStreetMap)
+    Retorna: (latitud, longitud) o None si no encuentra
+    """
+    if not direccion or len(direccion.strip()) < 3:
+        return None
+    
+    try:
+        url = f"https://nominatim.openstreetmap.org/search?format=json&q={direccion}&countrycodes=ar"
+        response = requests.get(url, headers={"User-Agent": "CentralLogisticaT268/1.0"})
+        data = response.json()
+        
+        if data and len(data) > 0:
+            return {
+                "lat": float(data[0]["lat"]),
+                "lon": float(data[0]["lon"]),
+                "display_name": data[0]["display_name"]
+            }
+    except Exception as e:
+        st.error(f"Error al geocodificar: {str(e)}")
+    
+    return None
+
+# --- CSS MEJORADO ---
 st.markdown("""
     <style>
-    /* Importar Fuente Inter (Moderna y Limpia) */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
     
-    /* Fondo General - Gris Pizarra Suave (No blanco puro) */
     .stApp { 
         background-color: #f8fafc; 
         font-family: 'Inter', sans-serif;
     }
     
-    /* Cabecera */
     .title-text {
         color: #003876;
         font-weight: 900;
@@ -42,7 +66,6 @@ st.markdown("""
         letter-spacing: -1px;
     }
     
-    /* Subtítulo de Fecha */
     .date-text {
         color: #64748b;
         font-weight: 500;
@@ -50,7 +73,6 @@ st.markdown("""
         margin-top: 5px;
     }
     
-    /* Botones Cápsula con Colores de la Idea Original */
     div.stButton > button {
         border-radius: 50px !important;
         height: 3.5em !important;
@@ -61,19 +83,16 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
     
-    /* Colores específicos para emular idea_central-T268.jpg */
-    button[key="top_1"] { border-bottom: 4px solid #4CAF50 !important; } /* Verde Clientes */
-    button[key="top_2"] { border-bottom: 4px solid #2196F3 !important; } /* Azul Faltantes */
-    button[key="top_3"] { border-bottom: 4px solid #FFC107 !important; } /* Amarillo Rutas */
-    button[key="top_4"] { border-bottom: 4px solid #FF5722 !important; } /* Naranja Informe */
+    button[key="top_1"] { border-bottom: 4px solid #4CAF50 !important; }
+    button[key="top_2"] { border-bottom: 4px solid #2196F3 !important; }
+    button[key="top_3"] { border-bottom: 4px solid #FFC107 !important; }
+    button[key="top_4"] { border-bottom: 4px solid #FF5722 !important; }
 
-    /* Efecto Hover en Botones */
     div.stButton > button:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
     }
 
-    /* Etiquetas de Sección */
     .card-label {
         color: #003876;
         font-weight: 700;
@@ -86,21 +105,18 @@ st.markdown("""
         padding-left: 10px;
     }
 
-    /* Input de Texto */
     .stTextInput > div > div > input {
         border-radius: 8px !important;
         border: 1px solid #cbd5e1 !important;
         padding: 10px !important;
     }
     
-    /* File Uploader */
     .stFileUploader {
         border-radius: 8px !important;
         border: 1px dashed #cbd5e1 !important;
         background-color: #ffffff !important;
     }
     
-    /* Mensajes de Éxito */
     .stSuccess {
         background-color: #d1fae5 !important;
         border-left: 4px solid #10b981 !important;
@@ -108,21 +124,28 @@ st.markdown("""
         border-radius: 4px !important;
     }
     
-    /* Mapa */
     .deckgl-view {
         border-radius: 12px !important;
         overflow: hidden !important;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
     }
     
-    /* Gráfico de Barras */
     .stBarChart {
         border-radius: 8px !important;
         overflow: hidden !important;
     }
     
-    /* Separadores */
     hr { border: 1px solid #e2e8f0; margin: 2rem 0; }
+    
+    /* Mensaje de búsqueda */
+    .search-result {
+        background-color: #dbeafe;
+        border-left: 4px solid #3b82f6;
+        padding: 10px;
+        border-radius: 4px;
+        margin-top: 10px;
+        font-size: 0.9em;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -130,7 +153,6 @@ st.markdown("""
 with st.container():
     c_logo, c_title = st.columns([1, 4])
     with c_logo:
-        # Probamos con el logo que tengas disponible
         logo_path = "carrefour+logo.png" if os.path.exists("carrefour+logo.png") else "logo.png.webp"
         if os.path.exists(logo_path):
             st.image(logo_path, width=180)
@@ -162,7 +184,6 @@ with col_izq:
         df_clean, fecha_tit = logic_clientes.motor_limpieza(df_raw)
         st.success(f"CDP Cargado: {fecha_tit}")
         
-        # Lógica de descarga según el botón superior presionado
         if btn_1:
             pdf = logic_clientes.generar_pdf_clientes(df_clean, fecha_tit)
             st.download_button("📥 DESCARGAR CLIENTES", bytes(pdf), f"Clientes_{fecha_tit}.pdf")
@@ -187,17 +208,51 @@ with col_izq:
 with col_der:
     st.markdown('<span class="card-label">🗺️ NAVEGACIÓN Y MONITOREO ROSARIO</span>', unsafe_allow_html=True)
     
-    # Buscador (Visual)
-    direc = st.text_input("🔍 Buscar dirección:", placeholder="Ej: Bv. Oroño y Pellegrini")
+    # --- BUSCADOR DE DIRECCIONES ---
+    st.markdown("**🔍 Buscar Dirección**")
+    direc = st.text_input("", placeholder="Ej: Bv. Oroño y Pellegrini, Rosario", key="map_search")
     
-    # MAPA: Cambiado a CartoDB Voyager (Más color, sin necesidad de Token)
-    # Estilo 'voyager' es colorido y detallado.
-    view_state = pdk.ViewState(
-        latitude=-32.9442, 
-        longitude=-60.6505, 
-        zoom=12, 
-        pitch=0
-    )
+    # Estado para guardar la ubicación encontrada
+    if 'map_location' not in st.session_state:
+        st.session_state.map_location = None
+    
+    # Al presionar Enter (el input de Streamlit lo detecta automáticamente)
+    if direc and st.session_state.map_location != direc:
+        st.session_state.map_location = direc
+        result = geocodificar_direccion(direc)
+        
+        if result:
+            st.session_state.map_coords = {
+                "lat": result["lat"],
+                "lon": result["lon"]
+            }
+            st.markdown(f'<div class="search-result">✅ {result["display_name"]}</div>', unsafe_allow_html=True)
+        else:
+            st.error("❌ No se encontró esa dirección. Intenta ser más específico.")
+            st.session_state.map_coords = None
+
+    # --- MAPA ---
+    # Configuración inicial
+    if st.session_state.get("map_coords"):
+        view_state = pdk.ViewState(
+            latitude=st.session_state.map_coords["lat"],
+            longitude=st.session_state.map_coords["lon"],
+            zoom=15,  # Zoom más cercano para ver calles
+            pitch=0
+        )
+    else:
+        view_state = pdk.ViewState(
+            latitude=-32.9442, 
+            longitude=-60.6505, 
+            zoom=12, 
+            pitch=0
+        )
+    
+    # Capa de puntos (marcador de ubicación)
+    if st.session_state.get("map_coords"):
+        data = [{"lng": st.session_state.map_coords["lon"], "lat": st.session_state.map_coords["lat"]}]
+    else:
+        data = [{"lng": -60.6505, "lat": -32.9442}]
     
     st.pydeck_chart(pdk.Deck(
         map_style='https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
@@ -205,10 +260,20 @@ with col_der:
         layers=[
             pdk.Layer(
                 "ScatterplotLayer",
-                data=[{"lng": -60.6505, "lat": -32.9442}],
+                data=data,
                 get_position='[lng, lat]',
-                get_color='[0, 56, 118, 200]', # Azul Carrefour
+                get_color='[0, 56, 118, 200]',
                 get_radius=300,
+            ),
+            # Capa de etiquetas de calles (mejor visibilidad)
+            pdk.Layer(
+                "TextLayer",
+                data=data,
+                get_text='[lng, lat]',
+                get_size=12,
+                get_color='[255, 255, 255, 200]',
+                get_alignment='center',
+                get_baseline='middle',
             )
         ]
     ))
