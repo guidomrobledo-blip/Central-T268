@@ -20,10 +20,17 @@ hoy_ar = fecha_ar_ahora.date()
 manana_ar_obj = hoy_ar + timedelta(days=1)
 manana_txt = manana_ar_obj.strftime("%d/%m/%Y")
 
-# --- CSS MEJORADO ---
+# --- CSS MEJORADO (Diseño Elegante y Profesional) ---
 st.markdown("""
     <style>
-    .stApp { background-color: #f1f4f9; }
+    /* Importar Fuente Inter (Moderna y Limpia) */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap');
+    
+    /* Fondo General - Gris Pizarra Suave (No blanco puro) */
+    .stApp { 
+        background-color: #f8fafc; 
+        font-family: 'Inter', sans-serif;
+    }
     
     /* Cabecera */
     .title-text {
@@ -32,6 +39,15 @@ st.markdown("""
         font-size: 2.5em;
         margin: 0;
         text-transform: uppercase;
+        letter-spacing: -1px;
+    }
+    
+    /* Subtítulo de Fecha */
+    .date-text {
+        color: #64748b;
+        font-weight: 500;
+        font-size: 1em;
+        margin-top: 5px;
     }
     
     /* Botones Cápsula con Colores de la Idea Original */
@@ -42,6 +58,7 @@ st.markdown("""
         border: none !important;
         box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
         transition: all 0.3s ease;
+        font-family: 'Inter', sans-serif;
     }
     
     /* Colores específicos para emular idea_central-T268.jpg */
@@ -50,17 +67,62 @@ st.markdown("""
     button[key="top_3"] { border-bottom: 4px solid #FFC107 !important; } /* Amarillo Rutas */
     button[key="top_4"] { border-bottom: 4px solid #FF5722 !important; } /* Naranja Informe */
 
-    .card-label {
-        color: #003876;
-        font-weight: bold;
-        font-size: 1em;
-        margin-bottom: 10px;
-        display: block;
-        text-transform: uppercase;
+    /* Efecto Hover en Botones */
+    div.stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(0,0,0,0.15) !important;
     }
 
-    /* REHABILITAR MENÚ (Quitamos el visibility:hidden que lo borró) */
-    header { visibility: visible !important; }
+    /* Etiquetas de Sección */
+    .card-label {
+        color: #003876;
+        font-weight: 700;
+        font-size: 1.1em;
+        margin-bottom: 15px;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-left: 4px solid #003876;
+        padding-left: 10px;
+    }
+
+    /* Input de Texto */
+    .stTextInput > div > div > input {
+        border-radius: 8px !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 10px !important;
+    }
+    
+    /* File Uploader */
+    .stFileUploader {
+        border-radius: 8px !important;
+        border: 1px dashed #cbd5e1 !important;
+        background-color: #ffffff !important;
+    }
+    
+    /* Mensajes de Éxito */
+    .stSuccess {
+        background-color: #d1fae5 !important;
+        border-left: 4px solid #10b981 !important;
+        padding: 10px !important;
+        border-radius: 4px !important;
+    }
+    
+    /* Mapa */
+    .deckgl-view {
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Gráfico de Barras */
+    .stBarChart {
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+    
+    /* Separadores */
+    hr { border: 1px solid #e2e8f0; margin: 2rem 0; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -74,7 +136,7 @@ with st.container():
             st.image(logo_path, width=180)
     with c_title:
         st.markdown('<h1 class="title-text">CENTRAL LOGÍSTICA T268</h1>', unsafe_allow_html=True)
-        st.markdown(f"**VENTAS ONLINE ROSARIO** | Gestión Operativa del {hoy_ar.strftime('%d/%m/%Y')}")
+        st.markdown(f'<p class="date-text">VENTAS ONLINE ROSARIO | Gestión Operativa del {hoy_ar.strftime("%d/%m/%Y")}</p>', unsafe_allow_html=True)
 
 st.write("")
 
