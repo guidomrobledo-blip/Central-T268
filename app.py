@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
+import os
 
 # --- CONFIGURACIÓN DE PÁGINA ---
 st.set_page_config(
@@ -32,7 +33,7 @@ st.markdown("""
         align-items: center;
         box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         margin-bottom: 25px;
-        border-left: 8px solid #003876;
+        border-left: 10px solid #003876;
     }
     
     .header-text-container {
@@ -49,7 +50,7 @@ st.markdown("""
     
     .header-subtitle {
         color: #555 !important;
-        font-size: 1.1em !important;
+        font-size: 1.2em !important;
         margin: 0 !important;
     }
 
@@ -58,11 +59,11 @@ st.markdown("""
         background-color: #1a202c !important;
         color: white !important;
         border-radius: 12px;
-        height: 3.8em;
+        height: 4em;
         width: 100%;
         border: none;
         font-weight: bold;
-        font-size: 1.05em;
+        font-size: 1.1em;
         transition: all 0.3s ease;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
     }
@@ -70,7 +71,7 @@ st.markdown("""
     div.stButton > button:hover {
         background-color: #2d3748 !important;
         transform: translateY(-2px);
-        box-shadow: 4px 8px 15px rgba(0,0,0,0.15);
+        box-shadow: 4px 8px 15px rgba(0,0,0,0.2);
     }
 
     /* Estilo de la Tarjeta del Informe (Botón 4) */
@@ -82,13 +83,6 @@ st.markdown("""
         margin-top: 20px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
-    
-    .info-card-title {
-        color: #e65100;
-        font-weight: bold;
-        font-size: 1.4em;
-        margin-top: 0;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -99,23 +93,33 @@ if 'inf_activo' not in st.session_state:
 # =========================================================
 # --- CABECERA CORPORATIVA ---
 # =========================================================
-logo_carrefour = "https://upload.wikimedia.org/wikipedia/en/thumb/5/5b/Carrefour_logo.svg/1024px-Carrefour_logo.svg.png"
-
-st.markdown(f"""
-    <div class="header-box">
-        <img src="{logo_carrefour}" width="90">
-        <div class="header-text-container">
-            <h1 class="header-title">Central Logística Carrefour Online</h1>
-            <p class="header-subtitle">Tienda 268 - Rosario, Santa Fe</p>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
+with st.container():
+    c_img, c_txt = st.columns([1, 4])
+    
+    with c_img:
+        # Intentamos cargar el logo localmente
+        # Si el nombre de tu archivo es distinto, cámbialo aquí:
+        nombre_logo = "carrefour+logo.png"
+        
+        if os.path.exists(nombre_logo):
+            st.image(nombre_logo, width=150)
+        else:
+            # Fallback en caso de que el archivo no esté en la carpeta
+            st.warning("⚠️ Logo local no encontrado.")
+            
+    with c_txt:
+        st.markdown(f"""
+            <div style="margin-left: 20px;">
+                <h1 class="header-title">Central Logística Carrefour Online</h1>
+                <p class="header-subtitle">Tienda 268 - Rosario, Santa Fe</p>
+            </div>
+        """, unsafe_allow_html=True)
 
 # =========================================================
 # --- CARGADOR DE ARCHIVO CDP (GENERAL) ---
 # =========================================================
-st.subheader("📂 CARGAR EXCEL CDP (Operaciones del Día)")
-archivo_cdp = st.file_uploader("", type=["xlsx"], key="main_up", help="Sube el archivo CDP para procesar CLIENTES, FALTANTES o RUTAS.")
+st.markdown("### 📂 CARGAR EXCEL CDP (Operaciones del Día)")
+archivo_cdp = st.file_uploader("", type=["xlsx"], key="main_up")
 
 st.divider()
 
@@ -159,7 +163,7 @@ if btn_4:
 if st.session_state.inf_activo:
     st.markdown(f"""
         <div class="info-card">
-            <h3 class="info-card-title">🚀 Procesador de Informe (Mañana: {manana_txt})</h3>
+            <h3 style="color: #e65100; margin:0;">🚀 Procesador de Informe (Mañana: {manana_txt})</h3>
             <p style="color: #666;">Sube el archivo CDP exclusivo para el informe del día siguiente.</p>
         </div>
     """, unsafe_allow_html=True)
