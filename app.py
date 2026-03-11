@@ -273,7 +273,7 @@ with col_der:
             pitch=0
         )
     
-    # Capa de puntos (marcador de ubicación)
+    # Capa de banderita roja (🚩)
     if st.session_state.get("map_coords"):
         data = [{"lng": st.session_state.map_coords["lon"], "lat": st.session_state.map_coords["lat"]}]
     else:
@@ -283,12 +283,16 @@ with col_der:
         map_style='https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
         initial_view_state=view_state,
         layers=[
+            # Capa de banderita roja (🚩)
             pdk.Layer(
-                "ScatterplotLayer",
+                "TextLayer",
                 data=data,
-                get_position='[lng, lat]',
-                get_color='[0, 56, 118, 200]',
-                get_radius=300,
+                get_text='["🚩"]',
+                get_size=40,  # Tamaño de la banderita
+                get_color='[255, 0, 0, 255]',  # Rojo sólido
+                get_alignment='center',
+                get_baseline='middle',
+                pickable=True,
             )
         ]
     ))
