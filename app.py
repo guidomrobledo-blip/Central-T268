@@ -273,7 +273,7 @@ with col_der:
             pitch=0
         )
     
-    # Capa de banderita roja (🚩)
+    # Capa de marcador (Punto Rojo con Borde Blanco)
     if st.session_state.get("map_coords"):
         data = [{"lng": st.session_state.map_coords["lon"], "lat": st.session_state.map_coords["lat"]}]
     else:
@@ -283,15 +283,22 @@ with col_der:
         map_style='https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
         initial_view_state=view_state,
         layers=[
-            # Capa de banderita roja (🚩)
+            # Capa de marcador (Punto Rojo con Borde Blanco)
             pdk.Layer(
-                "TextLayer",
+                "ScatterplotLayer",
                 data=data,
-                get_text='["🚩"]',
-                get_size=40,  # Tamaño de la banderita
-                get_color='[255, 0, 0, 255]',  # Rojo sólido
-                get_alignment='center',
-                get_baseline='middle',
+                get_position='[lng, lat]',
+                get_fill_color='[255, 0, 0, 255]',  # Rojo sólido
+                get_radius=15,  # Tamaño del punto
+                pickable=True,
+            ),
+            # Capa de borde blanco para mejor visibilidad
+            pdk.Layer(
+                "ScatterplotLayer",
+                data=data,
+                get_position='[lng, lat]',
+                get_fill_color='[255, 255, 255, 255]',  # Blanco
+                get_radius=20,  # Un poco más grande
                 pickable=True,
             )
         ]
