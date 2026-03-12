@@ -668,8 +668,7 @@ with col_izq:
 
 with col_der:
     # --- PANEL DE VISUALIZACION ---
-    st.markdown('<div class="glass-card glass-card-green" style="min-height: 480px; padding: 25px;">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title"><span class="card-icon">📈</span> PANEL DE VISUALIZACION DE VENTAS ONLINE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-title" style="margin-bottom: 20px;"><span class="card-icon">📈</span> PANEL DE VISUALIZACION DE VENTAS ONLINE</div>', unsafe_allow_html=True)
     
     # Calcular fechas de la semana actual
     inicio_semana = hoy_ar - timedelta(days=hoy_ar.weekday())
@@ -825,8 +824,6 @@ with col_der:
         )
         
         st.altair_chart(chart, use_container_width=True)
-    
-    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- FOOTER ---
 st.write("")
