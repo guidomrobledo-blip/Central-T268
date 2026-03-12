@@ -251,25 +251,7 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(0, 150, 255, 0.5);
     }
     
-    /* ===== LOGO CARREFOUR CON EFECTO NEON ===== */
-    .logo-carrefour {
-        height: 60px;
-        width: auto;
-        filter: 
-            drop-shadow(0 0 3px rgba(50, 86, 168, 0.8))
-            drop-shadow(0 0 6px rgba(50, 86, 168, 0.6))
-            drop-shadow(0 0 12px rgba(227, 5, 27, 0.4))
-            drop-shadow(0 0 20px rgba(50, 86, 168, 0.3));
-        transition: filter 0.3s ease;
-    }
-    
-    .logo-carrefour:hover {
-        filter: 
-            drop-shadow(0 0 4px rgba(50, 86, 168, 1))
-            drop-shadow(0 0 10px rgba(50, 86, 168, 0.8))
-            drop-shadow(0 0 18px rgba(227, 5, 27, 0.6))
-            drop-shadow(0 0 30px rgba(50, 86, 168, 0.5));
-    }
+
     
     /* ===== BOTONES NEON FLOTANTES CON GLOW POSTERIOR ===== */
     div.stButton > button {
@@ -737,9 +719,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- HEADER MODERNO ---
-# URL del logo en GitHub (reemplazar con la URL real del repositorio)
-LOGO_URL = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/carrefour%2Blogo.png"
-
 st.markdown("""
     <div class="header-container">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
@@ -749,11 +728,15 @@ st.markdown("""
                     <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
                 </p>
             </div>
-            <img src=\"""" + LOGO_URL + """\" 
-                 class="logo-carrefour" alt="Carrefour Online">
+            <div id="logo-spot"></div>
         </div>
     </div>
 """, unsafe_allow_html=True)
+
+# Insertar logo usando st.image (mas confiable)
+col_header_space, col_logo = st.columns([3, 1])
+with col_logo:
+    st.image("carrefour+logo.png", width=180)
 
 # --- FILA DE BOTONES NEON ---
 st.write("")
