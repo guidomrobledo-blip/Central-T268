@@ -740,7 +740,7 @@ st.markdown("""
     <div class="header-container">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
             <div>
-                <h1 class="title-main">Central Logistica T268</h1>
+                <h1 class="title-main">Central Online T-268</h1>
                 <p class="subtitle-main">Rosario - Gestion de Ventas Online 
                     <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
                 </p>
@@ -773,7 +773,7 @@ col_izq, col_der = st.columns([1, 1], gap="large")
 
 with col_izq:
     # --- TARJETA 1: CARGA CDP ---
-    st.markdown('<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📂</span> CARGAR EXCEL CDP (OPERACIONES CARREFOUR ONLINE)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📂</span> CARGAR EXCEL DE CDP (OPERACIONES CARREFOUR ONLINE)</div>', unsafe_allow_html=True)
     archivo_cdp = st.file_uploader("Subir CDP", type=["xlsx"], label_visibility="collapsed", key="cdp_upload")
     
     # Variables para almacenar datos del CDP
@@ -809,7 +809,7 @@ with col_izq:
     st.write("")
 
     # --- TARJETA 2: INFORME ---
-    st.markdown(f'<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📝</span> PROCESADOR DE INFORME (MANANA {manana_txt})</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📝</span> PROCESADOR DE INFORME (MAÑANA {manana_txt})</div>', unsafe_allow_html=True)
     archivo_inf = st.file_uploader("Subir CDP Manana", type=["xlsx"], key="inf_upload", label_visibility="collapsed")
     obs = st.text_area("Observaciones:", height=100, placeholder="Ingresa las novedades del turno aqui...", key="obs_area")
     
@@ -953,3 +953,4 @@ st.markdown('''
         </p>
     </div>
 ''', unsafe_allow_html=True)
+
