@@ -719,18 +719,38 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- HEADER MODERNO ---
-st.markdown('<div class="header-container">', unsafe_allow_html=True)
-col_texto, col_logo = st.columns([3, 1])
-with col_texto:
-    st.markdown("""
-        <h1 class="title-main">Central Logistica T268</h1>
-        <p class="subtitle-main">Rosario - Gestion de Ventas Online 
-            <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
-        </p>
-    """, unsafe_allow_html=True)
-with col_logo:
-    st.image("carrefour+logo.png", width=180)
-st.markdown('</div>', unsafe_allow_html=True)
+# Cargar logo como base64 para incluirlo en HTML
+import base64
+
+def get_image_base64(image_path):
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except:
+        return None
+
+logo_base64 = get_image_base64("carrefour+logo.png")
+logo_html = ""
+if logo_base64:
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" style="height: 60px; width: auto;" alt="Carrefour">'
+else:
+    logo_html = '<span style="color: rgba(255,255,255,0.5);">Logo</span>'
+
+st.markdown("""
+    <div class="header-container">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div>
+                <h1 class="title-main">Central Logistica T268</h1>
+                <p class="subtitle-main">Rosario - Gestion de Ventas Online 
+                    <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
+                </p>
+            </div>
+            <div style="padding-right: 20px;">
+                """ + logo_html + """
+            </div>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- FILA DE BOTONES NEON ---
 st.write("")
