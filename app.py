@@ -630,8 +630,7 @@ col_izq, col_der = st.columns([1, 1], gap="large")
 
 with col_izq:
     # --- TARJETA 1: CARGA CDP ---
-    st.markdown('<div class="glass-card glass-card-blue">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title"><span class="card-icon">📂</span> CARGAR EXCEL CDP (OPERACIONES CARREFOUR ONLINE)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📂</span> CARGAR EXCEL CDP (OPERACIONES CARREFOUR ONLINE)</div>', unsafe_allow_html=True)
     archivo_cdp = st.file_uploader("Subir CDP", type=["xlsx"], label_visibility="collapsed", key="cdp_upload")
     
     if archivo_cdp:
@@ -649,13 +648,12 @@ with col_izq:
         if btn_3:
             pdf = logic_domicilios.generar_pdf_domicilios(df_clean, fecha_tit)
             st.download_button("DESCARGAR PDF RUTAS", bytes(pdf), f"Rutas_{fecha_tit}.pdf", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
 
+    st.write("")
     st.write("")
 
     # --- TARJETA 2: INFORME ---
-    st.markdown('<div class="glass-card glass-card-orange">', unsafe_allow_html=True)
-    st.markdown(f'<div class="card-title"><span class="card-icon">📝</span> PROCESADOR DE INFORME (MANANA {manana_txt})</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📝</span> PROCESADOR DE INFORME (MANANA {manana_txt})</div>', unsafe_allow_html=True)
     archivo_inf = st.file_uploader("Subir CDP Manana", type=["xlsx"], key="inf_upload", label_visibility="collapsed")
     obs = st.text_area("Observaciones:", height=100, placeholder="Ingresa las novedades del turno aqui...", key="obs_area")
     
@@ -667,7 +665,6 @@ with col_izq:
             st.download_button("DESCARGAR REPORTE FINAL", pdf_bytes, f"Informe_{fecha_inf_tit}.pdf", use_container_width=True)
         else:
             st.warning("Cargue el CDP de manana primero.")
-    st.markdown('</div>', unsafe_allow_html=True)
 
 with col_der:
     # --- TARJETA 3: PANEL DE VISUALIZACION ---
