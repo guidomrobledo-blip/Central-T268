@@ -4,6 +4,8 @@ import numpy as np
 from datetime import datetime, timedelta
 import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
 import os
+import json
+import hashlib
 
 # --- CONFIGURACION ---
 st.set_page_config(
@@ -18,6 +20,129 @@ fecha_ar_ahora = datetime.utcnow() - timedelta(hours=3)
 hoy_ar = fecha_ar_ahora.date()
 manana_ar_obj = hoy_ar + timedelta(days=1)
 manana_txt = manana_ar_obj.strftime("%d/%m/%Y")
+
+# --- ARCHIVO DE PERSISTENCIA PARA DATOS MENSUALES ---
+DATA_FILE = "pedidos_mensuales.json"
+
+# Diccionario para traducir dias de la semana
+DIAS_SEMANA_ES = {
+    0: "Lun", 1: "Mar", 2: "Mier", 3: "Jue", 4: "Vie", 5: "Sab", 6: "Dom"
+}
+
+def cargar_datos_mensuales():
+    """Carga los datos del mes desde el archivo JSON. Reinicia si cambia de mes."""
+    try:
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, "r") as f:
+                datos = json.load(f)
+            # Verificar si es el mismo mes
+            mes_guardado = datos.get("mes", "")
+            mes_actual = hoy_ar.strftime("%Y-%m")
+            if mes_guardado != mes_actual:
+                # Nuevo mes, reiniciar datos
+                return {"mes": mes_actual, "pedidos_por_dia": {}, "archivos_procesados": []}
+            return datos
+        else:
+            return {"mes": hoy_ar.strftime("%Y-%m"), "pedidos_por_dia": {}, "archivos_procesados": []}
+    except Exception:
+        return {"mes": hoy_ar.strftime("%Y-%m"), "pedidos_por_dia": {}, "archivos_procesados": []}
+
+def guardar_datos_mensuales(datos):
+    """Guarda los datos del mes en el archivo JSON."""
+    try:
+        with open(DATA_FILE, "w") as f:
+            json.dump(datos, f)
+    except Exception:
+        pass
+
+def obtener_hash_archivo(archivo_bytes):
+    """Genera un hash unico para identificar archivos duplicados."""
+    return hashlib.md5(archivo_bytes).hexdigest()
+
+def extraer_fecha_entrega(df):
+    """Extrae la fecha de la columna FECHA ENTREGA del DataFrame."""
+    col_fecha = None
+    for col in df.columns:
+        if "FECHA" in str(col).upper() and "ENTREGA" in str(col).upper():
+            col_fecha = col
+            break
+    
+    if col_fecha is None:
+        return None
+    
+    try:
+        # Obtener el primer valor no nulo de la columna
+        fecha_val = df[col_fecha].dropna().iloc[0]
+        
+        # Si ya es datetime
+        if isinstance(fecha_val, (pd.Timestamp, datetime)):
+            return fecha_val.date() if hasattr(fecha_val, 'date') else fecha_val
+        
+        # Si es string, intentar parsear
+        fecha_str = str(fecha_val)
+        for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y"]:
+            try:
+                return datetime.strptime(fecha_str, fmt).date()
+            except ValueError:
+                continue
+        return None
+    except Exception:
+        return None
+
+def registrar_pedidos_cdp(archivo_bytes, df):
+    """Registra los pedidos del archivo CDP si no fue procesado antes."""
+    datos = cargar_datos_mensuales()
+    
+    # Verificar si el archivo ya fue procesado
+    archivo_hash = obtener_hash_archivo(archivo_bytes)
+    if archivo_hash in datos["archivos_procesados"]:
+        return datos, False  # Ya fue procesado, no registrar de nuevo
+    
+    # Extraer la fecha de entrega del Excel
+    fecha_entrega = extraer_fecha_entrega(df)
+    if fecha_entrega is None:
+        return datos, False
+    
+    # Solo registrar si la fecha es del mes actual
+    if fecha_entrega.strftime("%Y-%m") != datos["mes"]:
+        return datos, False
+    
+    # Registrar los pedidos para esa fecha
+    fecha_str = fecha_entrega.strftime("%Y-%m-%d")
+    cantidad_pedidos = len(df)
+    
+    # Guardar la cantidad de pedidos para esa fecha
+    datos["pedidos_por_dia"][fecha_str] = cantidad_pedidos
+    datos["archivos_procesados"].append(archivo_hash)
+    
+    guardar_datos_mensuales(datos)
+    return datos, True
+
+def obtener_datos_semana(datos_mensuales, inicio_semana):
+    """Obtiene los datos de pedidos para la semana especificada."""
+    pedidos_semana = []
+    dias_labels = []
+    
+    for i in range(7):
+        dia = inicio_semana + timedelta(days=i)
+        fecha_str = dia.strftime("%Y-%m-%d")
+        dia_semana = DIAS_SEMANA_ES[dia.weekday()]
+        dia_num = dia.day
+        
+        # Formato: "Lun-9", "Mar-10", etc.
+        label = f"{dia_semana}-{dia_num}"
+        dias_labels.append(label)
+        
+        # Obtener pedidos de ese dia (0 si no hay datos)
+        pedidos = datos_mensuales.get("pedidos_por_dia", {}).get(fecha_str, 0)
+        pedidos_semana.append(pedidos)
+    
+    return dias_labels, pedidos_semana
+
+def calcular_total_mes(datos_mensuales):
+    """Calcula el total de pedidos del mes (solo dias con datos)."""
+    pedidos_por_dia = datos_mensuales.get("pedidos_por_dia", {})
+    return sum(pedidos_por_dia.values())
 
 # --- CSS MODERNO: TEMA OSCURO CON EFECTOS NEON INTENSOS ---
 st.markdown("""
@@ -633,9 +758,22 @@ with col_izq:
     st.markdown('<div class="card-title" style="margin-bottom: 15px;"><span class="card-icon">📂</span> CARGAR EXCEL CDP (OPERACIONES CARREFOUR ONLINE)</div>', unsafe_allow_html=True)
     archivo_cdp = st.file_uploader("Subir CDP", type=["xlsx"], label_visibility="collapsed", key="cdp_upload")
     
+    # Variables para almacenar datos del CDP
+    df_clean = None
+    fecha_tit = None
+    archivo_cdp_bytes = None
+    
     if archivo_cdp:
+        # Leer el archivo como bytes para hashear
+        archivo_cdp_bytes = archivo_cdp.read()
+        archivo_cdp.seek(0)  # Resetear el puntero para pd.read_excel
+        
         df_raw = pd.read_excel(archivo_cdp)
         df_clean, fecha_tit = logic_clientes.motor_limpieza(df_raw)
+        
+        # Registrar pedidos para el grafico (evita duplicados)
+        datos_actualizados, fue_registrado = registrar_pedidos_cdp(archivo_cdp_bytes, df_raw)
+        
         st.success(f"CDP CARGADO: {fecha_tit}")
         
         # PROCESAMIENTO DE BOTONES
@@ -673,152 +811,121 @@ with col_der:
     # Calcular fechas de la semana actual
     inicio_semana = hoy_ar - timedelta(days=hoy_ar.weekday())
     fin_semana = inicio_semana + timedelta(days=6)
-    rango_semana = f"Semana {inicio_semana.strftime('%d-%b')} al {fin_semana.strftime('%d-%b')}"
     
-    # Calcular inicio del mes para el acumulado mensual
-    inicio_mes = hoy_ar.replace(day=1)
+    # Meses en español para el rango
+    MESES_ES = {1: "Ene", 2: "Feb", 3: "Mar", 4: "Abr", 5: "May", 6: "Jun",
+                7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
+    rango_semana = f"Semana {inicio_semana.day}-{MESES_ES[inicio_semana.month]} al {fin_semana.day}-{MESES_ES[fin_semana.month]}"
     
-    if archivo_cdp:
-        total_pedidos_dia = len(df_clean)
-        
-        # Calcular pedidos acumulados del mes
-        dias_transcurridos = (hoy_ar - inicio_mes).days + 1
-        total_pedidos_mes = total_pedidos_dia * dias_transcurridos
-        
-        # Contadores Neon compactos
-        col_n1, col_n2 = st.columns(2)
-        with col_n1:
+    # Cargar datos mensuales guardados
+    datos_mensuales = cargar_datos_mensuales()
+    
+    # Obtener datos de la semana actual
+    dias_labels, pedidos_semana = obtener_datos_semana(datos_mensuales, inicio_semana)
+    
+    # Calcular total del mes (solo dias con datos reales)
+    total_pedidos_mes = calcular_total_mes(datos_mensuales)
+    
+    # Obtener pedidos del dia actual desde los datos guardados
+    fecha_hoy_str = hoy_ar.strftime("%Y-%m-%d")
+    pedidos_dia_actual = datos_mensuales.get("pedidos_por_dia", {}).get(fecha_hoy_str, 0)
+    
+    # Si se acaba de cargar un archivo CDP, usar esos datos
+    if archivo_cdp and df_clean is not None:
+        # Extraer fecha del archivo para mostrar
+        fecha_archivo = extraer_fecha_entrega(df_raw)
+        if fecha_archivo:
+            fecha_archivo_str = fecha_archivo.strftime("%Y-%m-%d")
+            pedidos_dia_actual = datos_mensuales.get("pedidos_por_dia", {}).get(fecha_archivo_str, len(df_clean))
+    
+    # Contadores Neon compactos
+    col_n1, col_n2 = st.columns(2)
+    with col_n1:
+        if pedidos_dia_actual > 0:
             st.markdown(f'''
                 <div style="text-align: center; padding: 8px 0;">
-                    <div class="neon-counter neon-counter-green" style="font-size: 2.2em;">{total_pedidos_dia}</div>
+                    <div class="neon-counter neon-counter-green" style="font-size: 2.2em;">{pedidos_dia_actual}</div>
                     <div class="neon-counter-label" style="font-size: 0.7em;">Pedidos del Dia</div>
                 </div>
             ''', unsafe_allow_html=True)
-        with col_n2:
-            st.markdown(f'''
-                <div style="text-align: center; padding: 8px 0;">
-                    <div class="neon-counter neon-counter-blue" style="font-size: 2.2em;">{total_pedidos_mes}</div>
-                    <div class="neon-counter-label" style="font-size: 0.7em;">Total Pedidos del Mes</div>
-                </div>
-            ''', unsafe_allow_html=True)
-        
-        # Rango de semana compacto
-        st.markdown(f'''
-            <div style="text-align: center; margin: 5px 0;">
-                <span style="color: rgba(255,255,255,0.5); font-size: 0.75em; letter-spacing: 1px;">
-                    {rango_semana}
-                </span>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        # Generar fechas reales de la semana
-        dias_semana = []
-        for i in range(7):
-            dia = inicio_semana + timedelta(days=i)
-            dias_semana.append(dia.strftime('%a %d'))
-        
-        chart_data = pd.DataFrame({
-            'Dia': dias_semana,
-            'Pedidos': np.random.randint(40, 120, 7)
-        })
-        
-        # Grafico compacto con Altair
-        import altair as alt
-        
-        chart = alt.Chart(chart_data).mark_bar(
-            cornerRadiusTopLeft=4,
-            cornerRadiusTopRight=4,
-            color='#00ffcc'
-        ).encode(
-            x=alt.X('Dia:N', sort=None, axis=alt.Axis(
-                labelColor='rgba(255,255,255,0.6)',
-                labelAngle=-45,
-                labelFontSize=9,
-                title=None
-            )),
-            y=alt.Y('Pedidos:Q', axis=alt.Axis(
-                labelColor='rgba(255,255,255,0.6)',
-                gridColor='rgba(255,255,255,0.08)',
-                title=None
-            )),
-            tooltip=['Dia', 'Pedidos']
-        ).properties(
-            height=160
-        ).configure(
-            background='transparent'
-        ).configure_view(
-            strokeWidth=0
-        )
-        
-        st.altair_chart(chart, use_container_width=True)
-        
-    else:
-        st.info("Suba un archivo CDP para visualizar las metricas del dia")
-        
-        # Demo visual compacto
-        col_n1, col_n2 = st.columns(2)
-        with col_n1:
+        else:
             st.markdown('''
                 <div style="text-align: center; padding: 8px 0;">
                     <div class="neon-counter neon-counter-green" style="opacity: 0.4; font-size: 2.2em;">--</div>
                     <div class="neon-counter-label" style="font-size: 0.7em;">Pedidos del Dia</div>
                 </div>
             ''', unsafe_allow_html=True)
-        with col_n2:
+    
+    with col_n2:
+        if total_pedidos_mes > 0:
+            st.markdown(f'''
+                <div style="text-align: center; padding: 8px 0;">
+                    <div class="neon-counter neon-counter-blue" style="font-size: 2.2em;">{total_pedidos_mes}</div>
+                    <div class="neon-counter-label" style="font-size: 0.7em;">Total Pedidos del Mes</div>
+                </div>
+            ''', unsafe_allow_html=True)
+        else:
             st.markdown('''
                 <div style="text-align: center; padding: 8px 0;">
                     <div class="neon-counter neon-counter-blue" style="opacity: 0.4; font-size: 2.2em;">--</div>
                     <div class="neon-counter-label" style="font-size: 0.7em;">Total Pedidos del Mes</div>
                 </div>
             ''', unsafe_allow_html=True)
-        
-        st.markdown(f'''
-            <div style="text-align: center; margin: 5px 0;">
-                <span style="color: rgba(255,255,255,0.3); font-size: 0.75em; letter-spacing: 1px;">
-                    {rango_semana}
-                </span>
-            </div>
-        ''', unsafe_allow_html=True)
-        
-        # Grafico demo compacto con Altair
-        import altair as alt
-        
-        dias_semana = []
-        for i in range(7):
-            dia = inicio_semana + timedelta(days=i)
-            dias_semana.append(dia.strftime('%a %d'))
-        
-        demo_data = pd.DataFrame({
-            'Dia': dias_semana,
-            'Pedidos': [65, 78, 90, 85, 72, 45, 38]
-        })
-        
-        chart = alt.Chart(demo_data).mark_bar(
-            cornerRadiusTopLeft=4,
-            cornerRadiusTopRight=4,
-            color='#00ffcc',
-            opacity=0.5
-        ).encode(
-            x=alt.X('Dia:N', sort=None, axis=alt.Axis(
-                labelColor='rgba(255,255,255,0.3)',
-                labelAngle=-45,
-                labelFontSize=9,
-                title=None
-            )),
-            y=alt.Y('Pedidos:Q', axis=alt.Axis(
-                labelColor='rgba(255,255,255,0.3)',
-                gridColor='rgba(255,255,255,0.05)',
-                title=None
-            ))
-        ).properties(
-            height=160
-        ).configure(
-            background='transparent'
-        ).configure_view(
-            strokeWidth=0
-        )
-        
-        st.altair_chart(chart, use_container_width=True)
+    
+    # Rango de semana compacto
+    st.markdown(f'''
+        <div style="text-align: center; margin: 5px 0;">
+            <span style="color: rgba(255,255,255,0.5); font-size: 0.75em; letter-spacing: 1px;">
+                {rango_semana}
+            </span>
+        </div>
+    ''', unsafe_allow_html=True)
+    
+    # Crear DataFrame para el grafico con datos reales
+    chart_data = pd.DataFrame({
+        'Dia': dias_labels,
+        'Pedidos': pedidos_semana
+    })
+    
+    # Grafico compacto con Altair
+    import altair as alt
+    
+    # Determinar opacidad basada en si hay datos
+    tiene_datos = any(p > 0 for p in pedidos_semana)
+    opacidad_barras = 1.0 if tiene_datos else 0.5
+    color_labels = 'rgba(255,255,255,0.6)' if tiene_datos else 'rgba(255,255,255,0.3)'
+    
+    chart = alt.Chart(chart_data).mark_bar(
+        cornerRadiusTopLeft=4,
+        cornerRadiusTopRight=4,
+        color='#00ffcc',
+        opacity=opacidad_barras
+    ).encode(
+        x=alt.X('Dia:N', sort=None, axis=alt.Axis(
+            labelColor=color_labels,
+            labelAngle=0,  # Horizontal
+            labelFontSize=10,
+            title=None
+        )),
+        y=alt.Y('Pedidos:Q', axis=alt.Axis(
+            labelColor=color_labels,
+            gridColor='rgba(255,255,255,0.08)',
+            title=None
+        )),
+        tooltip=['Dia', 'Pedidos']
+    ).properties(
+        height=160
+    ).configure(
+        background='transparent'
+    ).configure_view(
+        strokeWidth=0
+    )
+    
+    st.altair_chart(chart, use_container_width=True)
+    
+    # Mensaje informativo si no hay archivo cargado
+    if not archivo_cdp:
+        st.info("Suba un archivo CDP para visualizar las metricas del dia")
 
 # --- FOOTER ---
 st.markdown('''
