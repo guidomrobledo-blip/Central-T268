@@ -719,24 +719,18 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- HEADER MODERNO ---
-st.markdown("""
-    <div class="header-container">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
-            <div>
-                <h1 class="title-main">Central Logistica T268</h1>
-                <p class="subtitle-main">Rosario - Gestion de Ventas Online 
-                    <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
-                </p>
-            </div>
-            <div id="logo-spot"></div>
-        </div>
-    </div>
-""", unsafe_allow_html=True)
-
-# Insertar logo usando st.image (mas confiable)
-col_header_space, col_logo = st.columns([3, 1])
+st.markdown('<div class="header-container">', unsafe_allow_html=True)
+col_texto, col_logo = st.columns([3, 1])
+with col_texto:
+    st.markdown("""
+        <h1 class="title-main">Central Logistica T268</h1>
+        <p class="subtitle-main">Rosario - Gestion de Ventas Online 
+            <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
+        </p>
+    """, unsafe_allow_html=True)
 with col_logo:
     st.image("carrefour+logo.png", width=180)
+st.markdown('</div>', unsafe_allow_html=True)
 
 # --- FILA DE BOTONES NEON ---
 st.write("")
