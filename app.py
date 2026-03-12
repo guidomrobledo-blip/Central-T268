@@ -732,7 +732,7 @@ def get_image_base64(image_path):
 logo_base64 = get_image_base64("carrefour+logo.png")
 logo_html = ""
 if logo_base64:
-    logo_html = f'<img src="data:image/png;base64,{logo_base64}" style="height: 60px; width: auto;" alt="Carrefour">'
+    logo_html = f'<img src="data:image/png;base64,{logo_base64}" style="height: 80px; width: auto;" alt="Carrefour">'
 else:
     logo_html = '<span style="color: rgba(255,255,255,0.5);">Logo</span>'
 
@@ -953,5 +953,6 @@ st.markdown('''
         </p>
     </div>
 ''', unsafe_allow_html=True)
+
 
 
