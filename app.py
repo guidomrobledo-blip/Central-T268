@@ -251,6 +251,58 @@ st.markdown("""
         box-shadow: 0 0 20px rgba(0, 150, 255, 0.5);
     }
     
+    /* ===== LOGO CARREFOUR CON EFECTO NEON ===== */
+    .logo-container {
+        position: relative;
+        display: inline-block;
+        padding: 12px 18px;
+        background: linear-gradient(145deg, rgba(15, 20, 40, 0.6), rgba(10, 15, 30, 0.4));
+        border-radius: 16px;
+        border: 1px solid rgba(50, 86, 168, 0.4);
+        box-shadow: 
+            0 0 30px rgba(50, 86, 168, 0.3),
+            0 0 60px rgba(227, 5, 27, 0.15),
+            0 0 90px rgba(50, 86, 168, 0.1),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: all 0.4s ease;
+    }
+    
+    .logo-container:hover {
+        box-shadow: 
+            0 0 40px rgba(50, 86, 168, 0.5),
+            0 0 80px rgba(227, 5, 27, 0.25),
+            0 0 120px rgba(50, 86, 168, 0.15),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        border-color: rgba(50, 86, 168, 0.6);
+    }
+    
+    .logo-container::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, rgba(50, 86, 168, 0.4), rgba(227, 5, 27, 0.3), rgba(50, 86, 168, 0.4));
+        border-radius: 18px;
+        z-index: -1;
+        opacity: 0.5;
+        filter: blur(8px);
+        animation: logo-glow 3s ease-in-out infinite;
+    }
+    
+    @keyframes logo-glow {
+        0%, 100% { opacity: 0.4; filter: blur(8px); }
+        50% { opacity: 0.7; filter: blur(12px); }
+    }
+    
+    .logo-carrefour {
+        height: 55px;
+        width: auto;
+        display: block;
+        filter: drop-shadow(0 0 8px rgba(50, 86, 168, 0.5)) drop-shadow(0 0 15px rgba(227, 5, 27, 0.3));
+    }
+    
     /* ===== BOTONES NEON FLOTANTES CON GLOW POSTERIOR ===== */
     div.stButton > button {
         background: linear-gradient(145deg, rgba(20, 20, 40, 0.95), rgba(10, 10, 25, 0.95)) !important;
@@ -717,6 +769,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- HEADER MODERNO ---
+# URL del logo en GitHub (reemplazar con la URL real del repositorio)
+LOGO_URL = "https://raw.githubusercontent.com/TU_USUARIO/TU_REPOSITORIO/main/carrefour%2Blogo.png"
+
 st.markdown("""
     <div class="header-container">
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;">
@@ -726,9 +781,9 @@ st.markdown("""
                     <span class="date-badge">""" + hoy_ar.strftime("%d/%m/%Y") + """</span>
                 </p>
             </div>
-            <div style="text-align: right;">
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/200px-Carrefour_logo.svg.png" 
-                     style="height: 65px; filter: brightness(0) invert(1); opacity: 0.95;" alt="Logo Carrefour">
+            <div class="logo-container">
+                <img src=\"""" + LOGO_URL + """\" 
+                     class="logo-carrefour" alt="Carrefour Online">
             </div>
         </div>
     </div>
