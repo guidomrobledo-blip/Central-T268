@@ -943,14 +943,15 @@ with col_der:
     
     # Mensaje informativo si no hay archivo cargado
     if not archivo_cdp:
-        st.info("Suba un archivo CDP para visualizar las metricas del dia")
+        st.info("Suba un archivo de CDP para visualizar las metricas del dia")
 
 # --- FOOTER ---
 st.markdown('''
     <div style="text-align: center; padding: 20px;">
         <p style="color: rgba(255, 255, 255, 0.4); font-size: 0.85em; letter-spacing: 2px;">
-            CENTRAL LOGISTICA T268 | CARREFOUR ONLINE | ROSARIO
+            CENTRAL DE ARMADO T268 | CARREFOUR ONLINE | ROSARIO
         </p>
     </div>
 ''', unsafe_allow_html=True)
+
 
