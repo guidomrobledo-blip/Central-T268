@@ -667,8 +667,8 @@ with col_izq:
             st.warning("Cargue el CDP de manana primero.")
 
 with col_der:
-    # --- TARJETA 3: PANEL DE VISUALIZACION ---
-    st.markdown('<div class="glass-card glass-card-green" style="min-height: 520px;">', unsafe_allow_html=True)
+    # --- PANEL DE VISUALIZACION ---
+    st.markdown('<div class="glass-card glass-card-green" style="min-height: 480px; padding: 25px;">', unsafe_allow_html=True)
     st.markdown('<div class="card-title"><span class="card-icon">📈</span> PANEL DE VISUALIZACION DE VENTAS ONLINE</div>', unsafe_allow_html=True)
     
     # Calcular fechas de la semana actual
@@ -825,6 +825,7 @@ with col_der:
         )
         
         st.altair_chart(chart, use_container_width=True)
+    
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- FOOTER ---
