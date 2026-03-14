@@ -208,10 +208,49 @@ st.markdown("""
         to { opacity: 0; visibility: hidden; }
     }
     
-    /* ===== MAIN BACKGROUND ===== */
+    /* ===== MAIN BACKGROUND WITH GRADIENT GLOW ===== */
     .stApp {
-        background: #0F172A !important;
+        background: linear-gradient(180deg, 
+            #1a1f35 0%, 
+            #151929 15%, 
+            #0F172A 40%, 
+            #0F172A 100%) !important;
         font-family: 'Inter', sans-serif !important;
+        position: relative;
+    }
+    
+    /* Purple/violet glow from top */
+    .stApp::before {
+        content: '';
+        position: fixed;
+        top: -50%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 150%;
+        height: 80%;
+        background: radial-gradient(ellipse at center, 
+            rgba(139, 92, 246, 0.15) 0%, 
+            rgba(124, 58, 237, 0.08) 30%, 
+            rgba(88, 28, 135, 0.03) 50%, 
+            transparent 70%);
+        pointer-events: none;
+        z-index: 0;
+    }
+    
+    /* Secondary glow accent */
+    .stApp::after {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 400px;
+        background: linear-gradient(180deg, 
+            rgba(139, 92, 246, 0.06) 0%, 
+            rgba(88, 28, 135, 0.02) 50%, 
+            transparent 100%);
+        pointer-events: none;
+        z-index: 0;
     }
     
     /* Remove default Streamlit styling */
@@ -223,6 +262,8 @@ st.markdown("""
     .block-container {
         padding: 1.5rem 2rem !important;
         max-width: 100% !important;
+        position: relative;
+        z-index: 1;
     }
     
     @media (min-width: 1400px) {
@@ -233,16 +274,39 @@ st.markdown("""
     
     /* ===== HEADER ===== */
     .header-container {
-        background: #111827;
-        border-radius: 12px;
-        padding: 20px 30px;
+        background: linear-gradient(135deg, 
+            rgba(30, 27, 75, 0.95) 0%, 
+            rgba(17, 24, 39, 0.98) 50%, 
+            rgba(17, 24, 39, 0.95) 100%);
+        border-radius: 16px;
+        padding: 24px 32px;
         margin-bottom: 24px;
-        border-bottom: 1px solid #1F2937;
+        border: 1px solid rgba(139, 92, 246, 0.15);
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 16px;
+        box-shadow: 
+            0 4px 30px rgba(139, 92, 246, 0.1),
+            0 1px 3px rgba(0, 0, 0, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Subtle inner glow for header */
+    .header-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(139, 92, 246, 0.4) 50%, 
+            transparent 100%);
     }
     
     .header-left {
@@ -263,34 +327,58 @@ st.markdown("""
     }
     
     .title-main {
-        color: #E5E7EB;
+        color: #F8FAFC;
         font-weight: 600;
         font-size: 1.5em;
         margin: 0;
         letter-spacing: 0.5px;
+        text-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
     }
     
     .subtitle-main {
-        color: #9CA3AF;
+        color: #A5B4FC;
         font-size: 0.9em;
         margin: 0;
         font-weight: 400;
     }
     
     .header-divider {
-        height: 1px;
-        background: linear-gradient(90deg, transparent, #B8964A, transparent);
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.6), transparent);
         margin-top: 16px;
-        opacity: 0.5;
+        opacity: 0.6;
     }
     
     /* ===== CARDS ===== */
     .glass-card {
-        background: #111827;
-        border-radius: 12px;
-        padding: 20px;
+        background: linear-gradient(145deg, 
+            rgba(30, 27, 55, 0.6) 0%, 
+            rgba(17, 24, 39, 0.95) 30%, 
+            rgba(17, 24, 39, 0.98) 100%);
+        border-radius: 14px;
+        padding: 24px;
         margin-bottom: 20px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 
+            0 4px 25px rgba(0, 0, 0, 0.4),
+            0 1px 3px rgba(0, 0, 0, 0.2),
+            inset 0 1px 0 rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(139, 92, 246, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    /* Subtle top edge glow on cards */
+    .glass-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 20%;
+        right: 20%;
+        height: 1px;
+        background: linear-gradient(90deg, 
+            transparent 0%, 
+            rgba(139, 92, 246, 0.25) 50%, 
+            transparent 100%);
     }
     
     .card-title {
@@ -304,7 +392,7 @@ st.markdown("""
         gap: 10px;
         margin-bottom: 16px;
         padding-bottom: 12px;
-        border-bottom: 1px solid #1F2937;
+        border-bottom: 1px solid rgba(139, 92, 246, 0.15);
     }
     
     .card-icon {
@@ -313,7 +401,7 @@ st.markdown("""
     
     /* ===== BUTTONS ===== */
     div.stButton > button {
-        background: #111827 !important;
+        background: linear-gradient(145deg, rgba(30, 27, 55, 0.8), rgba(17, 24, 39, 0.95)) !important;
         border-radius: 8px !important;
         height: 52px !important;
         font-weight: 600 !important;
@@ -321,14 +409,14 @@ st.markdown("""
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
         color: #E5E7EB !important;
-        border: 1px solid #1F2937 !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
         transition: all 0.2s ease !important;
     }
     
     div.stButton > button:hover {
-        border-color: #B8964A !important;
-        box-shadow: 0 0 0 1px #B8964A !important;
+        border-color: #8B5CF6 !important;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.3), 0 0 0 1px #8B5CF6 !important;
         transform: translateY(-1px) !important;
     }
     
@@ -344,7 +432,7 @@ st.markdown("""
     
     /* Link Button (Planilla MEC) */
     .stLinkButton > a {
-        background: #111827 !important;
+        background: linear-gradient(145deg, rgba(30, 27, 55, 0.8), rgba(17, 24, 39, 0.95)) !important;
         border-radius: 8px !important;
         height: 52px !important;
         font-weight: 600 !important;
@@ -352,8 +440,8 @@ st.markdown("""
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
         color: #E5E7EB !important;
-        border: 1px solid #1F2937 !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
         transition: all 0.2s ease !important;
         display: flex !important;
         align-items: center !important;
@@ -362,24 +450,28 @@ st.markdown("""
     }
     
     .stLinkButton > a:hover {
-        border-color: #B8964A !important;
-        box-shadow: 0 0 0 1px #B8964A !important;
+        border-color: #8B5CF6 !important;
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.3), 0 0 0 1px #8B5CF6 !important;
         transform: translateY(-1px) !important;
         text-decoration: none !important;
     }
     
     /* ===== FILE UPLOADER ===== */
     [data-testid="stFileUploader"] {
-        background: rgba(17, 24, 39, 0.5);
-        border-radius: 8px;
+        background: linear-gradient(145deg, 
+            rgba(30, 27, 55, 0.5) 0%, 
+            rgba(17, 24, 39, 0.7) 100%);
+        border-radius: 10px;
         padding: 16px;
-        border: 1px dashed #1F2937;
+        border: 1px dashed rgba(139, 92, 246, 0.3);
         transition: all 0.2s ease;
     }
     
     [data-testid="stFileUploader"]:hover {
-        border-color: #B8964A;
-        background: rgba(184, 150, 74, 0.05);
+        border-color: #8B5CF6;
+        background: linear-gradient(145deg, 
+            rgba(139, 92, 246, 0.1) 0%, 
+            rgba(17, 24, 39, 0.8) 100%);
     }
     
     [data-testid="stFileUploader"] label {
@@ -395,25 +487,38 @@ st.markdown("""
         color: #E5E7EB !important;
     }
     
-    /* Translate uploader text */
-    [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] p:first-child {
-        font-size: 0 !important;
+    /* File uploader dropzone styling */
+    [data-testid="stFileUploaderDropzone"] {
+        background: linear-gradient(145deg, 
+            rgba(30, 27, 55, 0.6) 0%, 
+            rgba(17, 24, 39, 0.8) 100%) !important;
+        border: none !important;
     }
-    [data-testid="stFileUploader"] [data-testid="stFileUploaderDropzone"] p:first-child::after {
-        content: "Arrastre y suelte el archivo aqui";
-        font-size: 0.9rem;
-        color: #9CA3AF;
+    
+    /* Style the cloud icon and text */
+    [data-testid="stFileUploaderDropzone"] svg {
+        color: #8B5CF6 !important;
+        opacity: 0.7;
+    }
+    
+    [data-testid="stFileUploaderDropzone"] > div {
+        color: #9CA3AF !important;
+    }
+    
+    [data-testid="stFileUploaderDropzone"] small {
+        color: #6B7280 !important;
     }
     
     [data-testid="stFileUploader"] button {
-        background: #1F2937 !important;
+        background: linear-gradient(145deg, rgba(88, 28, 135, 0.4), rgba(17, 24, 39, 0.9)) !important;
         color: #E5E7EB !important;
-        border: none !important;
+        border: 1px solid rgba(139, 92, 246, 0.3) !important;
         border-radius: 6px !important;
     }
     
     [data-testid="stFileUploader"] button:hover {
-        background: #374151 !important;
+        background: linear-gradient(145deg, rgba(139, 92, 246, 0.3), rgba(17, 24, 39, 0.9)) !important;
+        border-color: #8B5CF6 !important;
     }
     
     /* ===== TEXT AREA ===== */
@@ -444,30 +549,33 @@ st.markdown("""
     
     /* ===== METRICS / COUNTERS ===== */
     .metric-card {
-        background: #111827;
+        background: linear-gradient(145deg, 
+            rgba(30, 27, 55, 0.5) 0%, 
+            rgba(17, 24, 39, 0.9) 100%);
         border-radius: 12px;
         padding: 20px;
         text-align: center;
-        border: 1px solid #1F2937;
+        border: 1px solid rgba(139, 92, 246, 0.15);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
     
     .metric-value {
         font-family: 'Inter', sans-serif;
         font-weight: 700;
         font-size: 2.5em;
-        color: #E5E7EB;
+        color: #F1F5F9;
         margin: 0;
     }
     
     .metric-value-gold {
-        color: #B8964A;
+        color: #A78BFA;
     }
     
     .metric-label {
         font-family: 'Inter', sans-serif;
         font-weight: 500;
         font-size: 0.8em;
-        color: #9CA3AF;
+        color: #A5B4FC;
         text-transform: uppercase;
         letter-spacing: 1px;
         margin-top: 8px;
@@ -475,7 +583,7 @@ st.markdown("""
     
     .reset-btn {
         background: transparent;
-        border: 1px solid #1F2937;
+        border: 1px solid rgba(139, 92, 246, 0.2);
         border-radius: 6px;
         color: #9CA3AF;
         padding: 4px 8px;
@@ -486,8 +594,8 @@ st.markdown("""
     }
     
     .reset-btn:hover {
-        border-color: #B8964A;
-        color: #B8964A;
+        border-color: #8B5CF6;
+        color: #8B5CF6;
     }
     
     /* ===== CHARTS ===== */
@@ -527,25 +635,25 @@ st.markdown("""
     
     /* ===== DOWNLOAD BUTTON ===== */
     .stDownloadButton > button {
-        background: linear-gradient(135deg, #B8964A, #9A7B3A) !important;
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED) !important;
         border: none !important;
         border-radius: 8px !important;
         color: white !important;
         font-weight: 600 !important;
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
-        box-shadow: 0 2px 8px rgba(184, 150, 74, 0.3) !important;
+        box-shadow: 0 2px 12px rgba(139, 92, 246, 0.4) !important;
         transition: all 0.2s ease !important;
     }
     
     .stDownloadButton > button:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(184, 150, 74, 0.4) !important;
+        box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5) !important;
     }
     
     /* ===== SPINNER ===== */
     .stSpinner > div {
-        border-color: #B8964A transparent transparent transparent !important;
+        border-color: #8B5CF6 transparent transparent transparent !important;
     }
     
     /* ===== SCROLLBAR ===== */
@@ -593,10 +701,10 @@ st.markdown("""
     .footer {
         text-align: center;
         padding: 20px;
-        color: #6B7280;
+        color: #A5B4FC;
         font-size: 0.75em;
         letter-spacing: 1px;
-        border-top: 1px solid #1F2937;
+        border-top: 1px solid rgba(139, 92, 246, 0.15);
         margin-top: 24px;
     }
     
@@ -663,8 +771,10 @@ col_izq, col_der = st.columns([1, 1], gap="large")
 
 with col_izq:
     # --- CARD 1: CDP UPLOAD ---
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title"><span class="card-icon">📂</span> CARGAR EXCEL DE CDP</div>', unsafe_allow_html=True)
+    st.markdown('''
+        <div class="glass-card">
+            <div class="card-title"><span class="card-icon">📂</span> CARGAR EXCEL DE CDP</div>
+    ''', unsafe_allow_html=True)
     archivo_cdp = st.file_uploader("Subir CDP", type=["xlsx"], label_visibility="collapsed", key="cdp_upload")
     
     # Variables para almacenar datos del CDP
@@ -698,15 +808,17 @@ with col_izq:
         if btn_3:
             with st.spinner("Procesando archivo..."):
                 pdf = logic_domicilios.generar_pdf_domicilios(df_clean, fecha_tit)
-            st.download_button("DESCARGAR PDF RUTAS", bytes(pdf), f"Rutas_{fecha_tit}.pdf", use_container_width=True)
+            st.download_button("DESCARGAR PDF DOMICILIOS", bytes(pdf), f"Domicilios_{fecha_tit}.pdf", use_container_width=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
     
     st.write("")
 
     # --- CARD 2: INFORME ---
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="card-title"><span class="card-icon">📝</span> PROCESADOR DE INFORME (MAÑANA {manana_txt})</div>', unsafe_allow_html=True)
+    st.markdown(f'''
+        <div class="glass-card">
+            <div class="card-title"><span class="card-icon">📝</span> PROCESADOR DE INFORME (MAÑANA {manana_txt})</div>
+    ''', unsafe_allow_html=True)
     archivo_inf = st.file_uploader("Subir CDP Manana", type=["xlsx"], key="inf_upload", label_visibility="collapsed")
     
     st.markdown('<label style="color: #E5E7EB; font-weight: 500; font-size: 0.95em; display: block; margin-bottom: 8px;">Observaciones</label>', unsafe_allow_html=True)
@@ -726,8 +838,10 @@ with col_izq:
 
 with col_der:
     # --- VISUALIZATION PANEL ---
-    st.markdown('<div class="glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title"><span class="card-icon">📈</span> PANEL DE VISUALIZACION</div>', unsafe_allow_html=True)
+    st.markdown('''
+        <div class="glass-card">
+            <div class="card-title"><span class="card-icon">📈</span> PANEL DE VISUALIZACION</div>
+    ''', unsafe_allow_html=True)
     
     # Calcular fechas de la semana actual
     inicio_semana = hoy_ar - timedelta(days=hoy_ar.weekday())
@@ -823,8 +937,9 @@ with col_der:
     chart = alt.Chart(chart_data).mark_bar(
         cornerRadiusTopLeft=4,
         cornerRadiusTopRight=4,
-        color='#B8964A',
-        opacity=opacidad_barras
+        color='#A78BFA',
+        opacity=opacidad_barras,
+        width=20
     ).encode(
         x=alt.X('Dia:N', sort=None, axis=alt.Axis(
             labelColor='#9CA3AF',
@@ -871,7 +986,7 @@ with col_der:
     tiene_datos_mes = any(p > 0 for p in pedidos_mes)
     
     line_chart = alt.Chart(chart_mes_data).mark_line(
-        color='#B8964A',
+        color='#A78BFA',
         strokeWidth=2,
         opacity=1.0 if tiene_datos_mes else 0.3
     ).encode(
@@ -894,7 +1009,7 @@ with col_der:
     )
     
     points = alt.Chart(chart_mes_data[chart_mes_data['Pedidos'] > 0] if tiene_datos_mes else chart_mes_data).mark_circle(
-        color='#B8964A',
+        color='#A78BFA',
         size=40
     ).encode(
         x=alt.X('Dia:O'),
@@ -931,7 +1046,7 @@ with col_der:
                 color=alt.Color(field="Modalidad", type="nominal",
                     scale=alt.Scale(
                         domain=["DOMICILIOS", "DRIVE", "SUCURSAL"],
-                        range=["#B8964A", "#6B7280", "#E5E7EB"]
+                        range=["#A78BFA", "#6B7280", "#E5E7EB"]
                     ),
                     legend=None
                 ),
@@ -949,7 +1064,7 @@ with col_der:
             st.markdown(f'''
                 <div class="donut-legend">
                     <div class="legend-item">
-                        <span class="legend-dot" style="background: #B8964A;"></span>
+                        <span class="legend-dot" style="background: #A78BFA;"></span>
                         <span>DOMICILIOS ({modalidades.get("DOMICILIOS", 0)})</span>
                     </div>
                     <div class="legend-item">
