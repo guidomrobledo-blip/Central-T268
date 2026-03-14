@@ -295,7 +295,10 @@ st.markdown("""
         letter-spacing: 0.5px;
         text-shadow: 0 0 30px rgba(139, 92, 246, 0.3);
     }
-    
+    .title-main,
+    .title-main span {
+    color: #FFFFFF !important;
+    }
     .subtitle-main {
         color: #A5B4FC;
         font-size: 0.9em;
