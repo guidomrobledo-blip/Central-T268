@@ -279,7 +279,7 @@ st.markdown("""
     }
     
     .title-main {
-        color: #F8FAFC;
+        color: #FFFFFF;
         font-weight: 600;
         font-size: 1.5em;
         margin: 0;
