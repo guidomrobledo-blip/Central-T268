@@ -189,11 +189,11 @@ st.markdown("""
 .title-main::after {
     content: "";
     display: block;
-    width: 60px;
+    width: 140px;
     height: 2px;
     margin: 8px auto 0 auto;
     background: linear-gradient(90deg, transparent, #c6a769, transparent);
-    opacity: 0.6;
+    opacity: 0.7;
 }
     
     /* ===== LOADING SCREEN ===== */
