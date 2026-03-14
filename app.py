@@ -211,10 +211,10 @@ st.markdown("""
     /* ===== MAIN BACKGROUND WITH GRADIENT GLOW ===== */
     .stApp {
         background: 
-            radial-gradient(ellipse 120% 60% at 50% -10%, 
+            radial-gradient(ellipse 120% 90% at 50% -10%, 
                 rgba(139, 92, 246, 0.40) 0%, 
-                rgba(124, 58, 237, 0.10) 35%, 
-                transparent 70%),
+                rgba(124, 58, 237, 0.10) 40%, 
+                transparent 90%),
             linear-gradient(180deg, 
                 #1a1f35 0%, 
                 #151929 15%, 
