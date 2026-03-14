@@ -180,15 +180,6 @@ st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
-    /* ===== TITULO PANEL ===== */
-    .titulo-panel {
-        font-family: 'Inter', sans-serif;
-        font-size: 28px;
-        font-weight: 600;
-        text-align: center;
-        color: #f8fafc;
-        letter-spacing: 0.5px;
-    }
     /* ===== LOADING SCREEN ===== */
     .loading-screen {
         position: fixed;
