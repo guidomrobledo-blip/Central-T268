@@ -212,9 +212,9 @@ st.markdown("""
     .stApp {
         background: 
             radial-gradient(ellipse 120% 60% at 50% -10%, 
-                rgba(139, 92, 246, 0.80) 0%, 
-                rgba(124, 58, 237, 0.10) 30%, 
-                transparent 60%),
+                rgba(139, 92, 246, 0.40) 0%, 
+                rgba(124, 58, 237, 0.10) 35%, 
+                transparent 70%),
             linear-gradient(180deg, 
                 #1a1f35 0%, 
                 #151929 15%, 
