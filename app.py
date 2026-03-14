@@ -15,10 +15,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-# --- INICIALIZACIÓN DE ESTADOS ---
-if 'show_reset_confirm' not in st.session_state:
-    st.session_state.show_reset_confirm = False
-    
+
 # --- FECHA ARGENTINA (UTC-3) ---
 fecha_ar_ahora = datetime.utcnow() - timedelta(hours=3)
 hoy_ar = fecha_ar_ahora.date()
@@ -213,47 +210,17 @@ st.markdown("""
     
     /* ===== MAIN BACKGROUND WITH GRADIENT GLOW ===== */
     .stApp {
-        background: linear-gradient(180deg, 
-            #1a1f35 0%, 
-            #151929 15%, 
-            #0F172A 40%, 
-            #0F172A 100%) !important;
+        background: 
+            radial-gradient(ellipse 120% 60% at 50% -10%, 
+                rgba(139, 92, 246, 0.20) 0%, 
+                rgba(124, 58, 237, 0.10) 30%, 
+                transparent 60%),
+            linear-gradient(180deg, 
+                #1a1f35 0%, 
+                #151929 15%, 
+                #0F172A 40%, 
+                #0F172A 100%) !important;
         font-family: 'Inter', sans-serif !important;
-        position: relative;
-    }
-    
-    /* Purple/violet glow from top */
-    .stApp::before {
-        content: '';
-        position: fixed;
-        top: -50%;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 150%;
-        height: 80%;
-        background: radial-gradient(ellipse at center, 
-            rgba(139, 92, 246, 0.15) 0%, 
-            rgba(124, 58, 237, 0.08) 30%, 
-            rgba(88, 28, 135, 0.03) 50%, 
-            transparent 70%);
-        pointer-events: none;
-        z-index: 0;
-    }
-    
-    /* Secondary glow accent */
-    .stApp::after {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 400px;
-        background: linear-gradient(180deg, 
-            rgba(139, 92, 246, 0.06) 0%, 
-            rgba(88, 28, 135, 0.02) 50%, 
-            transparent 100%);
-        pointer-events: none;
-        z-index: 0;
     }
     
     /* Remove default Streamlit styling */
@@ -265,8 +232,6 @@ st.markdown("""
     .block-container {
         padding: 1.5rem 2rem !important;
         max-width: 100% !important;
-        position: relative;
-        z-index: 1;
     }
     
     @media (min-width: 1400px) {
@@ -285,6 +250,7 @@ st.markdown("""
         padding: 24px 32px;
         margin-bottom: 24px;
         border: 1px solid rgba(139, 92, 246, 0.15);
+        border-top: 2px solid rgba(139, 92, 246, 0.4);
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -292,24 +258,7 @@ st.markdown("""
         gap: 16px;
         box-shadow: 
             0 4px 30px rgba(139, 92, 246, 0.1),
-            0 1px 3px rgba(0, 0, 0, 0.3),
-            inset 0 1px 0 rgba(255, 255, 255, 0.05);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* Subtle inner glow for header */
-    .header-container::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(139, 92, 246, 0.4) 50%, 
-            transparent 100%);
+            0 1px 3px rgba(0, 0, 0, 0.3);
     }
     
     .header-left {
@@ -363,25 +312,9 @@ st.markdown("""
         margin-bottom: 20px;
         box-shadow: 
             0 4px 25px rgba(0, 0, 0, 0.4),
-            0 1px 3px rgba(0, 0, 0, 0.2),
-            inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            0 1px 3px rgba(0, 0, 0, 0.2);
         border: 1px solid rgba(139, 92, 246, 0.1);
-        position: relative;
-        overflow: hidden;
-    }
-    
-    /* Subtle top edge glow on cards */
-    .glass-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 20%;
-        right: 20%;
-        height: 1px;
-        background: linear-gradient(90deg, 
-            transparent 0%, 
-            rgba(139, 92, 246, 0.25) 50%, 
-            transparent 100%);
+        border-top: 2px solid rgba(139, 92, 246, 0.25);
     }
     
     .card-title {
