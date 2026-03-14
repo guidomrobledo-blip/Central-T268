@@ -873,7 +873,7 @@ with col_der:
     chart = alt.Chart(chart_data).mark_bar(
         cornerRadiusTopLeft=4,
         cornerRadiusTopRight=4,
-        color='#A78BFA',
+        color='#EFC84C',
         opacity=opacidad_barras,
         width=20
     ).encode(
