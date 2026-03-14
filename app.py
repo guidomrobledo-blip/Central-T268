@@ -179,6 +179,22 @@ def calcular_total_mes(datos_mensuales):
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+     .title-main {
+    text-shadow: 
+        0 1px 0 rgba(255,255,255,0.04),
+        0 6px 18px rgba(0,0,0,0.45);
+}
+
+.title-main::after {
+    content: "";
+    display: block;
+    width: 60px;
+    height: 2px;
+    margin: 8px auto 0 auto;
+    background: linear-gradient(90deg, transparent, #c6a769, transparent);
+    opacity: 0.6;
+}
     
     /* ===== LOADING SCREEN ===== */
     .loading-screen {
