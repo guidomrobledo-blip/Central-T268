@@ -15,7 +15,10 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed"
 )
-
+# --- INICIALIZACIÓN DE ESTADOS ---
+if 'show_reset_confirm' not in st.session_state:
+    st.session_state.show_reset_confirm = False
+    
 # --- FECHA ARGENTINA (UTC-3) ---
 fecha_ar_ahora = datetime.utcnow() - timedelta(hours=3)
 hoy_ar = fecha_ar_ahora.date()
