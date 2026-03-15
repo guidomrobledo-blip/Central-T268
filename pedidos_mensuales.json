@@ -3,8 +3,8 @@
  "pedidos_por_dia": {},
  "archivos_procesados": [],
  "modalidades": {
-   "DOMICILIOS": 10,
-   "DRIVE": 5,
-   "SUCURSAL": 3
+   "DOMICILIOS": 0,
+   "DRIVE": 0,
+   "SUCURSAL": 0
  }
 }
