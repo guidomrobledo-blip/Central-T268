@@ -119,14 +119,14 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     cantidad_pedidos = len(df)
 
     # --- CONTAR MODALIDADES ---
-col_modalidad = None
-for col in df.columns:
-    if "MODALIDAD" in str(col).upper() or "ENTREGA" in str(col).upper():
-        col_modalidad = col
-        break
+    col_modalidad = None
+    for col in df.columns:
+        if "MODALIDAD" in str(col).upper() or "ENTREGA" in str(col).upper():
+            col_modalidad = col
+            break
 
-if col_modalidad:
-    conteo = df[col_modalidad].astype(str).str.upper().value_counts()
+    if col_modalidad:
+        conteo = df[col_modalidad].astype(str).str.upper().value_counts()
 
     datos["modalidades"]["DOMICILIOS"] += conteo.get("DOMICILIO", 0)
     datos["modalidades"]["DRIVE"] += conteo.get("DRIVE", 0)
