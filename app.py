@@ -118,7 +118,7 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     fecha_str = fecha_entrega.strftime("%Y-%m-%d")
     cantidad_pedidos = len(df)
 
-        # --- CONTAR MODALIDADES ---
+    # --- CONTAR MODALIDADES ---
     col_modalidad = None
     
     for col in df.columns:
@@ -130,11 +130,11 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     
     if col_modalidad:
         conteo = df[col_modalidad].astype(str).str.strip().str.upper().value_counts()
-
-    datos["modalidades"]["DOMICILIOS"] += conteo.get("DOMICILIO", 0)
-    datos["modalidades"]["DRIVE"] += conteo.get("DRIVE", 0)
-    datos["modalidades"]["SUCURSAL"] += conteo.get("SUCURSAL", 0)
     
+        datos["modalidades"]["DOMICILIOS"] += conteo.get("DOMICILIO", 0)
+        datos["modalidades"]["DRIVE"] += conteo.get("DRIVE", 0)
+        datos["modalidades"]["SUCURSAL"] += conteo.get("SUCURSAL", 0)
+        
     # Guardar la cantidad de pedidos para esa fecha
     datos["pedidos_por_dia"][fecha_str] = cantidad_pedidos
     datos["archivos_procesados"].append(archivo_hash)
