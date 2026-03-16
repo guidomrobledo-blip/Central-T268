@@ -86,12 +86,12 @@ def extraer_fecha_entrega(df):
             return fecha_val.date() if hasattr(fecha_val, 'date') else fecha_val
         
         # Intentar convertir usando pandas (mucho más robusto)
-    fecha = pd.to_datetime(fecha_val, dayfirst=True, errors="coerce")
-    
-    if pd.notna(fecha):
-        return fecha.date()
-    
-    return None
+fecha = pd.to_datetime(fecha_val, dayfirst=True, errors="coerce")
+
+if pd.notna(fecha):
+    return fecha.date()
+
+return None
 
 def registrar_pedidos_cdp(archivo_bytes, df):
     """Registra los pedidos del archivo CDP si no fue procesado antes."""
