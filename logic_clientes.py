@@ -65,14 +65,24 @@ def motor_limpieza(df):
     df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
     df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
     df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
-    mapping = {
-        "Domicilio | 10:00 a 14:00": 1, "Domicilio | 14:00 a 18:00": 2,
-        "Drive | 09:00 a 13:00": 3, "Sucursal | 09:00 a 13:00": 4,
-        "Drive | 13:00 a 18:00": 5, "Sucursal | 13:00 a 18:00": 6,
-        "Drive | 18:00 a 21:00": 7, "Sucursal | 18:00 a 21:00": 8
-    }
-    df['Prioridad'] = df.apply(lambda r: mapping.get(f"{r['MODALIDAD DE ENTREGA']} | {r['BANDA HORARIA']}", 99), axis=1)
-    return df.sort_values('Prioridad'), fecha_tit_str
+
+    # Lógica de prioridad ajustada para agrupar Drive y Sucursal en el mismo bloque
+    def asignar_prioridad_agrupada(row):
+        mod = str(row.get('MODALIDAD DE ENTREGA', ''))
+        banda = str(row.get('BANDA HORARIA', ''))
+        es_retiro = "Drive" in mod or "Sucursal" in mod
+        
+        if "10:00 a 14:00" in banda and "Domicilio" in mod: return 1
+        if "14:00 a 18:00" in banda and "Domicilio" in mod: return 2
+        if "09:00 a 13:00" in banda and es_retiro: return 3
+        if "13:00 a 18:00" in banda and es_retiro: return 4
+        if "18:00 a 21:00" in banda and es_retiro: return 5
+        return 99
+
+    df['Prioridad_Agrupada'] = df.apply(asignar_prioridad_agrupada, axis=1)
+    
+    # Ordenamos por la prioridad del bloque y luego por modalidad para que queden organizados dentro del grupo
+    return df.sort_values(['Prioridad_Agrupada', 'MODALIDAD DE ENTREGA']), fecha_tit_str
 
 class PlanillaPDF(FPDF):
     def __init__(self, fecha_tit):
@@ -97,36 +107,31 @@ def generar_pdf_clientes(df, fecha_tit):
         pdf = PlanillaPDF(fecha_tit)
         pdf.add_page()
         widths = [28, 20, 32, 22, 22, 47, 25]
-        ultima_llave_agrupada = None
-        resumen = {}
+        ultima_llave_visual, resumen = None, {}
         
         for _, row in df.iterrows():
-            modalidad = str(row['MODALIDAD DE ENTREGA'])
+            mod = str(row['MODALIDAD DE ENTREGA'])
             banda = str(row['BANDA HORARIA'])
-            llave_original = f"{modalidad} | {banda}"
+            llave_real = f"{mod} | {banda}"
             
-            # Lógica de unificación para el zócalo separador
-            if "Drive" in modalidad or "Sucursal" in modalidad:
+            # Definimos el nombre del zócalo unificado
+            if "Drive" in mod or "Sucursal" in mod:
                 llave_visual = f"Drive/Sucursal | {banda}"
             else:
                 llave_visual = f"Domicilio | {banda}"
+                
+            resumen[llave_real] = resumen.get(llave_real, 0) + 1
             
-            # Actualizar resumen con la llave original para mantener el detalle al final
-            resumen[llave_original] = resumen.get(llave_original, 0) + 1
-            
-            # Dibujar el zócalo solo si cambia la agrupación visual
-            if llave_visual != ultima_llave_agrupada:
-                pdf.set_fill_color(64, 64, 64)
-                pdf.set_text_color(255, 255, 255)
+            # Solo dibujamos el zócalo si cambia la etiqueta visual
+            if llave_visual != ultima_llave_visual:
+                pdf.set_fill_color(64, 64, 64); pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
                 pdf.cell(sum(widths), row_height + 1.5, f"--- {llave_visual} ---", border=1, ln=True, align='C', fill=True)
-                pdf.set_text_color(0, 0, 0)
-                pdf.set_font("Times", '', font_size)
-                ultima_llave_agrupada = llave_visual
-            
-            # Celdas de datos
+                pdf.set_text_color(0, 0, 0); pdf.set_font("Times", '', font_size)
+                ultima_llave_visual = llave_visual
+                
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
-            pdf.cell(widths[1], row_height, modalidad[:10], border=1)
+            pdf.cell(widths[1], row_height, mod[:10], border=1)
             pdf.cell(widths[2], row_height, banda[:18], border=1)
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
             pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
@@ -134,19 +139,17 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
             
-        # El resto del código para el resumen final y saltos de página se mantiene igual
         if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
         pdf.ln(4)
         hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
         pdf.set_font("Times", 'B', font_size + 1.5)
         pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg}]", ln=True, align='R')
         pdf.set_font("Times", '', font_size + 0.5)
-        for b, t in resumen.items(): 
-            pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
+        for b, t in resumen.items(): pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
         pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
-        
         if pdf.page_no() <= 2: break
         font_size -= 0.5; row_height -= 0.3
-        
     return bytes(pdf.output())
+
+# FIN
