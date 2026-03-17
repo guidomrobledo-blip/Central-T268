@@ -282,14 +282,15 @@ st.markdown("""
     /* ===== MAIN BACKGROUND WITH GRADIENT GLOW ===== */
     .stApp {
         background: 
-            radial-gradient(ellipse 120% 100% at 50% -10%, 
-                rgba(139, 92, 246, 0.50) 0%, 
-                rgba(124, 58, 237, 0.10) 40%, 
-                transparent 90%),
+            radial-gradient(ellipse 140% 120% at 50% -5%, 
+                rgba(99, 130, 255, 0.45) 0%, 
+                rgba(79, 110, 230, 0.20) 35%, 
+                rgba(59, 90, 200, 0.08) 55%,
+                transparent 85%),
             linear-gradient(180deg, 
-                #1a1f35 0%, 
-                #151929 15%, 
-                #0F172A 40%, 
+                #1e2540 0%, 
+                #182035 20%, 
+                #131a2e 50%, 
                 #0F172A 100%) !important;
         font-family: 'Inter', sans-serif !important;
     }
@@ -314,21 +315,21 @@ st.markdown("""
     /* ===== HEADER ===== */
     .header-container {
         background: linear-gradient(135deg, 
-            rgba(30, 27, 75, 0.95) 0%, 
-            rgba(17, 24, 39, 0.98) 50%, 
-            rgba(17, 24, 39, 0.95) 100%);
+            rgba(35, 45, 85, 0.95) 0%, 
+            rgba(25, 35, 60, 0.98) 50%, 
+            rgba(20, 28, 50, 0.95) 100%);
         border-radius: 16px;
         padding: 24px 32px;
         margin-bottom: 24px;
-        border: 1px solid rgba(139, 92, 246, 0.15);
-        border-top: 2px solid rgba(139, 92, 246, 0.4);
+        border: 1px solid rgba(99, 130, 255, 0.20);
+        border-top: 2px solid rgba(99, 130, 255, 0.50);
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 16px;
         box-shadow: 
-            0 4px 30px rgba(139, 92, 246, 0.1),
+            0 4px 30px rgba(99, 130, 255, 0.15),
             0 1px 3px rgba(0, 0, 0, 0.3);
     }
     
@@ -378,17 +379,17 @@ st.markdown("""
     /* ===== CARDS ===== */
     .glass-card {
         background: linear-gradient(145deg, 
-            rgba(30, 27, 55, 0.6) 0%, 
-            rgba(17, 24, 39, 0.95) 30%, 
-            rgba(17, 24, 39, 0.98) 100%);
+            rgba(35, 45, 75, 0.6) 0%, 
+            rgba(22, 30, 50, 0.95) 30%, 
+            rgba(18, 25, 45, 0.98) 100%);
         border-radius: 14px;
         padding: 24px;
         margin-bottom: 20px;
         box-shadow: 
             0 4px 25px rgba(0, 0, 0, 0.4),
             0 1px 3px rgba(0, 0, 0, 0.2);
-        border: 1px solid rgba(139, 92, 246, 0.1);
-        border-top: 2px solid rgba(139, 92, 246, 0.25);
+        border: 1px solid rgba(99, 130, 255, 0.12);
+        border-top: 2px solid rgba(99, 130, 255, 0.30);
     }
     
     .card-title {
@@ -411,7 +412,7 @@ st.markdown("""
     
     /* ===== BUTTONS ===== */
     div.stButton > button {
-        background: linear-gradient(145deg, rgba(30, 27, 55, 0.8), rgba(17, 24, 39, 0.95)) !important;
+        background: linear-gradient(145deg, rgba(35, 45, 75, 0.8), rgba(20, 28, 50, 0.95)) !important;
         border-radius: 8px !important;
         height: 52px !important;
         font-weight: 600 !important;
@@ -419,14 +420,14 @@ st.markdown("""
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
         color: #E5E7EB !important;
-        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+        border: 1px solid rgba(99, 130, 255, 0.25) !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
         transition: all 0.2s ease !important;
     }
     
     div.stButton > button:hover {
-        border-color: #8B5CF6 !important;
-        box-shadow: 0 0 15px rgba(139, 92, 246, 0.3), 0 0 0 1px #8B5CF6 !important;
+        border-color: #6382FF !important;
+        box-shadow: 0 0 15px rgba(99, 130, 255, 0.35), 0 0 0 1px #6382FF !important;
         transform: translateY(-1px) !important;
     }
     
@@ -442,7 +443,7 @@ st.markdown("""
     
     /* Link Button (Planilla MEC) */
     .stLinkButton > a {
-        background: linear-gradient(145deg, rgba(30, 27, 55, 0.8), rgba(17, 24, 39, 0.95)) !important;
+        background: linear-gradient(145deg, rgba(35, 45, 75, 0.8), rgba(20, 28, 50, 0.95)) !important;
         border-radius: 8px !important;
         height: 52px !important;
         font-weight: 600 !important;
@@ -450,7 +451,7 @@ st.markdown("""
         text-transform: uppercase !important;
         letter-spacing: 1px !important;
         color: #E5E7EB !important;
-        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+        border: 1px solid rgba(99, 130, 255, 0.25) !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
         transition: all 0.2s ease !important;
         display: flex !important;
@@ -460,8 +461,8 @@ st.markdown("""
     }
     
     .stLinkButton > a:hover {
-        border-color: #8B5CF6 !important;
-        box-shadow: 0 0 15px rgba(139, 92, 246, 0.3), 0 0 0 1px #8B5CF6 !important;
+        border-color: #6382FF !important;
+        box-shadow: 0 0 15px rgba(99, 130, 255, 0.35), 0 0 0 1px #6382FF !important;
         transform: translateY(-1px) !important;
         text-decoration: none !important;
     }
@@ -803,6 +804,10 @@ with col_izq:
             
             # Registrar pedidos para el grafico (evita duplicados)
             datos_actualizados, fue_registrado = registrar_pedidos_cdp(archivo_cdp_bytes, df_raw)
+            
+            # Si se registro un nuevo archivo, recargar para actualizar graficos
+            if fue_registrado:
+                st.rerun()
         
         st.success(f"CDP CARGADO: {fecha_tit}")
         
@@ -925,27 +930,31 @@ with col_der:
     
     st.write("")
     
-    # --- WEEKLY CHART (Ajuste sugerido) ---
+    # --- WEEKLY CHART ---
     st.markdown(f'''
         <p style="color: #9CA3AF; font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
             {rango_semana}
         </p>
     ''', unsafe_allow_html=True)
     
+    # Crear DataFrame para el grafico con datos reales
     chart_data = pd.DataFrame({
         'Dia': dias_labels,
         'Pedidos': pedidos_semana
     })
     
+    # Grafico con Altair
     import altair as alt
     
-    # Eliminamos la lógica de opacidad condicional externa y la manejamos 
-    # directamente en el mark_bar para asegurar visibilidad constante.
+    tiene_datos = any(p > 0 for p in pedidos_semana)
+    opacidad_barras = 1.0 if tiene_datos else 0.3
+    
     chart = alt.Chart(chart_data).mark_bar(
         cornerRadiusTopLeft=4,
         cornerRadiusTopRight=4,
         color='#c6a769',
-        width=alt.RelativeStep(0.5) # Ajuste de ancho relativo para mejor renderizado
+        opacity=opacidad_barras,
+        width=20
     ).encode(
         x=alt.X('Dia:N', sort=None, axis=alt.Axis(
             labelColor='#9CA3AF',
@@ -960,16 +969,15 @@ with col_der:
             gridColor='#1F2937',
             title=None,
             tickColor='#1F2937',
-            domainColor='#1F2937',
-            format='d' # Forzamos formato de números enteros
-        ), scale=alt.Scale(domainMin=0)), # Aseguramos que el eje empiece en 0
+            domainColor='#1F2937'
+        )),
         tooltip=['Dia', 'Pedidos']
     ).properties(
         height=150
+    ).configure(
+        background='transparent'
     ).configure_view(
         strokeWidth=0
-    ).configure_axis(
-        domain=False
     )
     
     st.altair_chart(chart, use_container_width=True)
