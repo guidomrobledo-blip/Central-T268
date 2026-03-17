@@ -68,35 +68,34 @@ def obtener_hash_archivo(archivo_bytes):
 
 def extraer_fecha_entrega(df):
     """Extrae la fecha de la columna FECHA ENTREGA del DataFrame."""
-    
     col_fecha = None
-    
     for col in df.columns:
         if "FECHA" in str(col).upper() and "ENTREGA" in str(col).upper():
             col_fecha = col
             break
-
+    
     if col_fecha is None:
         return None
-
+    
     try:
-        # Obtener el primer valor no nulo
+        # Obtener el primer valor no nulo de la columna
         fecha_val = df[col_fecha].dropna().iloc[0]
-
+        
         # Si ya es datetime
         if isinstance(fecha_val, (pd.Timestamp, datetime)):
-            return fecha_val.date()
-
-        # Conversión robusta con pandas
-        fecha = pd.to_datetime(fecha_val, dayfirst=True, errors="coerce")
-
-        if pd.notna(fecha):
-            return fecha.date()
-
+            return fecha_val.date() if hasattr(fecha_val, 'date') else fecha_val
+        
+        # Si es string, intentar parsear con multiples formatos
+        fecha_str = str(fecha_val)
+        for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%d-%m-%y", "%d-%b-%y", "%d/%m/%Y"]:
+            try:
+                return datetime.strptime(fecha_str, fmt).date()
+            except ValueError:
+                continue
         return None
-
     except Exception:
         return None
+
 def registrar_pedidos_cdp(archivo_bytes, df):
     """Registra los pedidos del archivo CDP si no fue procesado antes."""
     datos = cargar_datos_mensuales()
