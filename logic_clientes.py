@@ -97,34 +97,56 @@ def generar_pdf_clientes(df, fecha_tit):
         pdf = PlanillaPDF(fecha_tit)
         pdf.add_page()
         widths = [28, 20, 32, 22, 22, 47, 25]
-        ultima_llave, resumen = None, {}
+        ultima_llave_agrupada = None
+        resumen = {}
+        
         for _, row in df.iterrows():
-            llave = f"{row['MODALIDAD DE ENTREGA']} | {row['BANDA HORARIA']}"
-            resumen[llave] = resumen.get(llave, 0) + 1
-            if llave != ultima_llave:
-                pdf.set_fill_color(64, 64, 64); pdf.set_text_color(255, 255, 255)
+            modalidad = str(row['MODALIDAD DE ENTREGA'])
+            banda = str(row['BANDA HORARIA'])
+            llave_original = f"{modalidad} | {banda}"
+            
+            # Lógica de unificación para el zócalo separador
+            if "Drive" in modalidad or "Sucursal" in modalidad:
+                llave_visual = f"Drive/Sucursal | {banda}"
+            else:
+                llave_visual = f"Domicilio | {banda}"
+            
+            # Actualizar resumen con la llave original para mantener el detalle al final
+            resumen[llave_original] = resumen.get(llave_original, 0) + 1
+            
+            # Dibujar el zócalo solo si cambia la agrupación visual
+            if llave_visual != ultima_llave_agrupada:
+                pdf.set_fill_color(64, 64, 64)
+                pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
-                pdf.cell(sum(widths), row_height + 1.5, f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
-                pdf.set_text_color(0, 0, 0); pdf.set_font("Times", '', font_size)
-                ultima_llave = llave
+                pdf.cell(sum(widths), row_height + 1.5, f"--- {llave_visual} ---", border=1, ln=True, align='C', fill=True)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Times", '', font_size)
+                ultima_llave_agrupada = llave_visual
+            
+            # Celdas de datos
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
-            pdf.cell(widths[1], row_height, str(row['MODALIDAD DE ENTREGA'])[:10], border=1)
-            pdf.cell(widths[2], row_height, str(row['BANDA HORARIA'])[:18], border=1)
+            pdf.cell(widths[1], row_height, modalidad[:10], border=1)
+            pdf.cell(widths[2], row_height, banda[:18], border=1)
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
             pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
             pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
+            
+        # El resto del código para el resumen final y saltos de página se mantiene igual
         if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
         pdf.ln(4)
         hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
         pdf.set_font("Times", 'B', font_size + 1.5)
         pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg}]", ln=True, align='R')
         pdf.set_font("Times", '', font_size + 0.5)
-        for b, t in resumen.items(): pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
+        for b, t in resumen.items(): 
+            pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
         pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
+        
         if pdf.page_no() <= 2: break
         font_size -= 0.5; row_height -= 0.3
+        
     return bytes(pdf.output())
-
