@@ -1,6 +1,12 @@
 {
  "mes": "2026-03",
- "pedidos_por_dia": {},
+ "pedidos_por_dia": {
+   "2026-03-10": 120,
+   "2026-03-11": 98,
+   "2026-03-12": 135,
+   "2026-03-13": 110,
+   "2026-03-14": 87
+ },
  "archivos_procesados": [],
  "modalidades": {
    "DOMICILIOS": 0,
