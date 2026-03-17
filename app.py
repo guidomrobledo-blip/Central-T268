@@ -803,7 +803,7 @@ with col_izq:
             df_clean, fecha_tit = logic_clientes.motor_limpieza(df_raw)
             
             # Registrar pedidos para el grafico (evita duplicados)
-            datos_actualizados, fue_registrado = registrar_pedidos_cdp(archivo_cdp_bytes, df_raw)
+           datos_actualizados, fue_registrado = registrar_pedidos_cdp(archivo_cdp_bytes, df_clean)
             
             # Si se registro un nuevo archivo, recargar para actualizar graficos
             if fue_registrado:
