@@ -5,7 +5,10 @@ from fpdf import FPDF
 import os
 
 def motor_limpieza(df):
+    """Limpia y prepara los datos básicos."""
     df.columns = [str(c).strip() for c in df.columns]
+    
+    # Extraer fecha para el título
     fecha_raw = df['FECHA ENTREGA'].iloc[0] if 'FECHA ENTREGA' in df.columns else "S/D"
     try:
         f_dt = pd.to_datetime(fecha_raw)
@@ -13,6 +16,7 @@ def motor_limpieza(df):
     except:
         fecha_tit_str = str(fecha_raw)
 
+    # Funciones de limpieza de nombres y direcciones
     def procesar_apellido_ajustado(texto):
         if pd.isna(texto) or str(texto).strip() == "": return ""
         partes = str(texto).split()
@@ -29,60 +33,18 @@ def motor_limpieza(df):
 
     def formatear_direccion_pro(row):
         calle = str(row.get('CALLE', '')).strip().title()
-        dicc = {
-            "Avenida": "Av.", "Boulevard": "Bv.", "Cortada": "Cda.",
-            "Diagonal": "Diag.", "Pasaje": "Pje.", "Entre Rios": "E. Ríos",
-            "Sargento": "Sgto.", "General": "Gral.", "Doctor": "Dr.",
-            "Presidente": "Pres.", "Republica": "Rep.", "Batalla": "Bat.",
-            "Manuel Belgrano": "M. Belgrano", "Carlos Pellegrini": "C. Pellegrini",
-            "Jorge Newbery": "J. Newbery", "Juan Jose Paso": "J.J. Paso",
-            "Juan Manuel De Rosas": "J.M. de Rosas", "Martin Rodriguez": "M. Rodriguez",
-            "Ovidio": "Ov."
-        }
+        dicc = {"Avenida": "Av.", "Boulevard": "Bv.", "Cortada": "Cda.", "Pasaje": "Pje."}
         for k, v in dicc.items(): calle = calle.replace(k, v)
-        calle = re.sub(r'Pellegrini|Pelegrini', 'Pellegrini', calle, flags=re.IGNORECASE)
         nro = str(row.get('NUMERO', '')).strip()
         nro_str = f" {nro}" if nro.lower() != 'nan' and nro != '' else ""
-        depto_raw = str(row.get('DEPTO', '')).upper().strip()
-        excluir = ["DR", "NAN", "@ SC @ NRO @ DPTO", "@ SC", "@ NRO", "@ DPTO"]
-        corchete = ""
-        if depto_raw and not any(x == depto_raw for x in excluir):
-            if any(pb in depto_raw for pb in ["PLANTA BAJA", "P.B", "P/B", "PB"]): corchete = " [P/B]"
-            elif any(pa in depto_raw for pa in ["PLANTA ALTA", "P.ALTA", "P.A", "PLANTA.A", "PA"]): corchete = " [P/A]"
-            else:
-                piso_match = re.search(r'(?:PISO|P|PSO|P\.)\s*(\d+)', depto_raw)
-                dpto_match = re.search(r'(?:DEPTO|DEPARTAMENTO|DPTO|DPT|D\.|D)\s*([A-Z0-9]+)', depto_raw)
-                piso, dpto = (piso_match.group(1) if piso_match else ""), (dpto_match.group(1) if dpto_match else "")
-                if not piso and not dpto:
-                    partes = re.findall(r'([A-Z0-9]+)', depto_raw)
-                    if len(partes) >= 2: piso, dpto = partes[0], partes[1]
-                    elif len(partes) == 1: dpto = partes[0]
-                if piso and dpto: corchete = f" [{piso} - {dpto}]" if piso != dpto else f" [{piso}]"
-                elif piso: corchete = f" [{piso}]"
-                elif dpto: corchete = f" [{dpto}]"
-        return f"{calle}{nro_str}{corchete}".strip()
+        return f"{calle}{nro_str}".strip()
 
-    df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
+    # Aplicar limpiezas
     df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
     df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
-
-    # Lógica de prioridad ajustada para agrupar Drive y Sucursal en el mismo bloque
-    def asignar_prioridad_agrupada(row):
-        mod = str(row.get('MODALIDAD DE ENTREGA', ''))
-        banda = str(row.get('BANDA HORARIA', ''))
-        es_retiro = "Drive" in mod or "Sucursal" in mod
-        
-        if "10:00 a 14:00" in banda and "Domicilio" in mod: return 1
-        if "14:00 a 18:00" in banda and "Domicilio" in mod: return 2
-        if "09:00 a 13:00" in banda and es_retiro: return 3
-        if "13:00 a 18:00" in banda and es_retiro: return 4
-        if "18:00 a 21:00" in banda and es_retiro: return 5
-        return 99
-
-    df['Prioridad_Agrupada'] = df.apply(asignar_prioridad_agrupada, axis=1)
+    df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
     
-    # Ordenamos por la prioridad del bloque y luego por modalidad para que queden organizados dentro del grupo
-    return df.sort_values(['Prioridad_Agrupada', 'MODALIDAD DE ENTREGA']), fecha_tit_str
+    return df, fecha_tit_str
 
 class PlanillaPDF(FPDF):
     def __init__(self, fecha_tit):
@@ -90,66 +52,83 @@ class PlanillaPDF(FPDF):
         self.fecha_tit = fecha_tit
         self.set_margins(left=7, top=10, right=7)
         self.set_auto_page_break(auto=True, margin=8)
+
     def header(self):
-        if os.path.exists('carrefour+logo.png'): self.image('carrefour+logo.png', x=7, y=8, w=55)
+        if os.path.exists('carrefour+logo.png'):
+            self.image('carrefour+logo.png', x=7, y=8, w=55)
         self.set_font("Times", 'B', 11)
         self.set_xy(100, 10)
         self.multi_cell(100, 5, f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]", align='R')
         self.ln(6)
-        self.set_fill_color(240, 240, 240); self.set_font("Times", 'B', 9)
-        cols, widths = ["Nro PEDIDO", "MODALIDAD", "BANDA HORARIA", "NOMBRE", "APELLIDO", "DIRECCIÓN", "TELÉFONO"], [28, 20, 32, 22, 22, 47, 25]
-        for i, col in enumerate(cols): self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
+        self.set_fill_color(240, 240, 240)
+        self.set_font("Times", 'B', 9)
+        cols = ["Nro PEDIDO", "MODALIDAD", "BANDA HORARIA", "NOMBRE", "APELLIDO", "DIRECCIÓN", "TELÉFONO"]
+        widths = [28, 20, 32, 22, 22, 47, 25]
+        for i, col in enumerate(cols):
+            self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
         self.ln()
 
 def generar_pdf_clientes(df, fecha_tit):
+    # --- PASO CRÍTICO: RE-AGRUPAR ANTES DE DIBUJAR ---
+    def crear_llave_visual(row):
+        mod = str(row.get('MODALIDAD DE ENTREGA', ''))
+        banda = str(row.get('BANDA HORARIA', ''))
+        if "Drive" in mod or "Sucursal" in mod:
+            return f"Drive/Sucursal | {banda}", 1 # Prioridad 1 para retiros
+        return f"Domicilio | {banda}", 0 # Prioridad 0 para domicilios
+
+    # Creamos la columna de agrupación y ordenamos físicamente el DF aquí
+    df['LLAVE_ZOCALO'], df['TIPO_ORDEN'] = zip(*df.apply(crear_llave_visual, axis=1))
+    df = df.sort_values(by=['TIPO_ORDEN', 'BANDA HORARIA', 'MODALIDAD DE ENTREGA'], ascending=[False, True, True])
+
     font_size, row_height = 9.5, 5
     while font_size > 6.5:
         pdf = PlanillaPDF(fecha_tit)
         pdf.add_page()
         widths = [28, 20, 32, 22, 22, 47, 25]
-        ultima_llave_visual, resumen = None, {}
-        
+        ultima_llave = None
+        resumen = {}
+
         for _, row in df.iterrows():
-            mod = str(row['MODALIDAD DE ENTREGA'])
-            banda = str(row['BANDA HORARIA'])
-            llave_real = f"{mod} | {banda}"
+            llave_actual = row['LLAVE_ZOCALO']
+            mod_real = str(row['MODALIDAD DE ENTREGA'])
+            banda_real = str(row['BANDA HORARIA'])
             
-            # Definimos el nombre del zócalo unificado
-            if "Drive" in mod or "Sucursal" in mod:
-                llave_visual = f"Drive/Sucursal | {banda}"
-            else:
-                llave_visual = f"Domicilio | {banda}"
-                
-            resumen[llave_real] = resumen.get(llave_real, 0) + 1
-            
-            # Solo dibujamos el zócalo si cambia la etiqueta visual
-            if llave_visual != ultima_llave_visual:
-                pdf.set_fill_color(64, 64, 64); pdf.set_text_color(255, 255, 255)
+            # Conteo para el informe final
+            resumen[f"{mod_real} | {banda_real}"] = resumen.get(f"{mod_real} | {banda_real}", 0) + 1
+
+            # Dibujar Zócalo solo si cambia la LLAVE VISUAL
+            if llave_actual != ultima_llave:
+                pdf.set_fill_color(64, 64, 64)
+                pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
-                pdf.cell(sum(widths), row_height + 1.5, f"--- {llave_visual} ---", border=1, ln=True, align='C', fill=True)
-                pdf.set_text_color(0, 0, 0); pdf.set_font("Times", '', font_size)
-                ultima_llave_visual = llave_visual
-                
+                pdf.cell(sum(widths), row_height + 1.5, f"--- {llave_actual} ---", border=1, ln=True, align='C', fill=True)
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Times", '', font_size)
+                ultima_llave = llave_actual
+
+            # Filas de datos
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
-            pdf.cell(widths[1], row_height, mod[:10], border=1)
-            pdf.cell(widths[2], row_height, banda[:18], border=1)
+            pdf.cell(widths[1], row_height, mod_real[:10], border=1)
+            pdf.cell(widths[2], row_height, banda_real[:18], border=1)
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
             pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
             pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
-            
-        if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
-        pdf.ln(4)
-        hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
-        pdf.set_font("Times", 'B', font_size + 1.5)
-        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg}]", ln=True, align='R')
-        pdf.set_font("Times", '', font_size + 0.5)
-        for b, t in resumen.items(): pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
-        pdf.set_font("Times", 'B', font_size + 2)
-        pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
-        if pdf.page_no() <= 2: break
-        font_size -= 0.5; row_height -= 0.3
-    return bytes(pdf.output())
 
-# FIN
+        # Informe final
+        if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
+        pdf.ln(5)
+        pdf.set_font("Times", 'B', font_size + 1)
+        pdf.cell(0, 6, "Resumen de Pedidos:", ln=True, align='R')
+        pdf.set_font("Times", '', font_size)
+        for k, v in resumen.items():
+            pdf.cell(0, 4.5, f"{k}: {v}", ln=True, align='R')
+        pdf.set_font("Times", 'B', font_size + 1)
+        pdf.cell(0, 8, f"TOTAL: {len(df)}", ln=True, align='R')
+        
+        if pdf.page_no() <= 15: break # Seguridad para el bucle
+        font_size -= 0.5
+
+    return pdf.output(dest='S').encode('latin-1')
