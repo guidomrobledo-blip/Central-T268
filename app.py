@@ -925,31 +925,27 @@ with col_der:
     
     st.write("")
     
-    # --- WEEKLY CHART ---
+    # --- WEEKLY CHART (Ajuste sugerido) ---
     st.markdown(f'''
         <p style="color: #9CA3AF; font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
             {rango_semana}
         </p>
     ''', unsafe_allow_html=True)
     
-    # Crear DataFrame para el grafico con datos reales
     chart_data = pd.DataFrame({
         'Dia': dias_labels,
         'Pedidos': pedidos_semana
     })
     
-    # Grafico con Altair
     import altair as alt
     
-    tiene_datos = any(p > 0 for p in pedidos_semana)
-    opacidad_barras = 1.0 if tiene_datos else 0.3
-    
+    # Eliminamos la lógica de opacidad condicional externa y la manejamos 
+    # directamente en el mark_bar para asegurar visibilidad constante.
     chart = alt.Chart(chart_data).mark_bar(
         cornerRadiusTopLeft=4,
         cornerRadiusTopRight=4,
         color='#c6a769',
-        opacity=opacidad_barras,
-        width=20
+        width=alt.RelativeStep(0.5) # Ajuste de ancho relativo para mejor renderizado
     ).encode(
         x=alt.X('Dia:N', sort=None, axis=alt.Axis(
             labelColor='#9CA3AF',
@@ -964,15 +960,16 @@ with col_der:
             gridColor='#1F2937',
             title=None,
             tickColor='#1F2937',
-            domainColor='#1F2937'
-        )),
+            domainColor='#1F2937',
+            format='d' # Forzamos formato de números enteros
+        ), scale=alt.Scale(domainMin=0)), # Aseguramos que el eje empiece en 0
         tooltip=['Dia', 'Pedidos']
     ).properties(
         height=150
-    ).configure(
-        background='transparent'
     ).configure_view(
         strokeWidth=0
+    ).configure_axis(
+        domain=False
     )
     
     st.altair_chart(chart, use_container_width=True)
