@@ -96,6 +96,52 @@ def extraer_fecha_entrega(df):
     except Exception:
         return None
 
+def contar_modalidades(df):
+    """Cuenta las modalidades de entrega del DataFrame."""
+    modalidades_conteo = {"DOMICILIOS": 0, "DRIVE": 0, "SUCURSAL": 0}
+    
+    # Buscar la columna de modalidad de entrega (priorizar "MODALIDAD DE ENTREGA")
+    col_modalidad = None
+    
+    # Primera busqueda: columna exacta o similar a "MODALIDAD DE ENTREGA"
+    for col in df.columns:
+        col_upper = str(col).upper().strip()
+        if "MODALIDAD" in col_upper and "ENTREGA" in col_upper:
+            col_modalidad = col
+            break
+    
+    # Segunda busqueda: solo "MODALIDAD"
+    if col_modalidad is None:
+        for col in df.columns:
+            col_upper = str(col).upper().strip()
+            if "MODALIDAD" in col_upper and "FECHA" not in col_upper:
+                col_modalidad = col
+                break
+    
+    # Tercera busqueda: "TIPO ENTREGA" o "CANAL"
+    if col_modalidad is None:
+        for col in df.columns:
+            col_upper = str(col).upper().strip()
+            if ("TIPO" in col_upper and "ENTREGA" in col_upper) or "CANAL" in col_upper:
+                col_modalidad = col
+                break
+    
+    if col_modalidad is not None:
+        for valor in df[col_modalidad].dropna():
+            valor_upper = str(valor).upper().strip()
+            # Detectar DOMICILIO/DOMICILIOS
+            if "DOMICILIO" in valor_upper or "A DOMICILIO" in valor_upper:
+                modalidades_conteo["DOMICILIOS"] += 1
+            # Detectar DRIVE
+            elif "DRIVE" in valor_upper:
+                modalidades_conteo["DRIVE"] += 1
+            # Detectar SUCURSAL (retiro en tienda, pick up, etc.)
+            elif "SUCURSAL" in valor_upper or "RETIRO" in valor_upper or "PICK" in valor_upper or "TIENDA" in valor_upper:
+                modalidades_conteo["SUCURSAL"] += 1
+    
+    return modalidades_conteo
+
+
 def registrar_pedidos_cdp(archivo_bytes, df):
     """Registra los pedidos del archivo CDP si no fue procesado antes."""
     datos = cargar_datos_mensuales()
@@ -121,6 +167,15 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     # Guardar la cantidad de pedidos para esa fecha
     datos["pedidos_por_dia"][fecha_str] = cantidad_pedidos
     datos["archivos_procesados"].append(archivo_hash)
+    
+    # Contar modalidades y acumular al total mensual
+    modalidades_archivo = contar_modalidades(df)
+    if "modalidades" not in datos:
+        datos["modalidades"] = {"DOMICILIOS": 0, "DRIVE": 0, "SUCURSAL": 0}
+    
+    datos["modalidades"]["DOMICILIOS"] += modalidades_archivo["DOMICILIOS"]
+    datos["modalidades"]["DRIVE"] += modalidades_archivo["DRIVE"]
+    datos["modalidades"]["SUCURSAL"] += modalidades_archivo["SUCURSAL"]
     
     guardar_datos_mensuales(datos)
     return datos, True
@@ -807,7 +862,7 @@ with col_der:
                 7: "Jul", 8: "Ago", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dic"}
     rango_semana = f"Semana {inicio_semana.day}-{MESES_ES[inicio_semana.month]} al {fin_semana.day}-{MESES_ES[fin_semana.month]}"
     
-    # Cargar datos mensuales guardados
+    # Cargar datos mensuales guardados (recargar para obtener datos actualizados)
     datos_mensuales = cargar_datos_mensuales()
     
     # Obtener datos de la semana actual
@@ -984,6 +1039,12 @@ with col_der:
     
     # --- DONUT CHART (Modalidades) ---
     st.write("")
+    st.markdown('''
+        <p style="color: #9CA3AF; font-size: 0.8em; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">
+            Modalidades de Entrega (Acumulado Mensual)
+        </p>
+    ''', unsafe_allow_html=True)
+    
     modalidades = datos_mensuales.get("modalidades", {"DOMICILIOS": 0, "DRIVE": 0, "SUCURSAL": 0})
     total_modalidades = sum(modalidades.values())
     
@@ -1032,6 +1093,24 @@ with col_der:
                     </div>
                 </div>
             ''', unsafe_allow_html=True)
+    else:
+        # Mostrar leyenda con valores en cero cuando no hay datos
+        st.markdown(f'''
+            <div class="donut-legend" style="opacity: 0.5;">
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #A78BFA;"></span>
+                    <span>DOMICILIOS (0)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #6B7280;"></span>
+                    <span>DRIVE (0)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background: #E5E7EB;"></span>
+                    <span>SUCURSAL (0)</span>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
     
     # Mensaje informativo si no hay archivo cargado
     if not archivo_cdp:
