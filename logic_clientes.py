@@ -131,4 +131,4 @@ def generar_pdf_clientes(df, fecha_tit):
         if pdf.page_no() <= 15: break # Seguridad para el bucle
         font_size -= 0.5
 
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output(dest='S').encode('latin-1', errors='ignore')
