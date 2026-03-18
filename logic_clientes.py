@@ -6,6 +6,8 @@ import os
 
 def motor_limpieza(df):
     """Limpia y prepara los datos básicos."""
+    # Llenamos vacíos con texto vacío para evitar errores de tipo Nonetype
+    df = df.fillna('')
     df.columns = [str(c).strip() for c in df.columns]
     
     # Extraer fecha para el título
@@ -16,9 +18,8 @@ def motor_limpieza(df):
     except:
         fecha_tit_str = str(fecha_raw)
 
-    # Funciones de limpieza de nombres y direcciones
     def procesar_apellido_ajustado(texto):
-        if pd.isna(texto) or str(texto).strip() == "": return ""
+        if not texto: return ""
         partes = str(texto).split()
         excepciones = ['DA', 'DE', 'DI', 'DO', 'DU', 'LA', 'DEL', 'DAS', 'DOS']
         resultado, i = [], 0
@@ -40,7 +41,7 @@ def motor_limpieza(df):
         return f"{calle}{nro_str}".strip()
 
     # Aplicar limpiezas
-    df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
+    df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if n else "")
     df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
     df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
     
@@ -69,66 +70,64 @@ class PlanillaPDF(FPDF):
         self.ln()
 
 def generar_pdf_clientes(df, fecha_tit):
-    # --- PASO CRÍTICO: RE-AGRUPAR ANTES DE DIBUJAR ---
+    # --- UNIFICACIÓN DE CRITERIOS ---
     def crear_llave_visual(row):
         mod = str(row.get('MODALIDAD DE ENTREGA', ''))
         banda = str(row.get('BANDA HORARIA', ''))
         if "Drive" in mod or "Sucursal" in mod:
-            return f"Drive/Sucursal | {banda}", 1 # Prioridad 1 para retiros
-        return f"Domicilio | {banda}", 0 # Prioridad 0 para domicilios
+            return f"Drive/Sucursal | {banda}", 1 
+        return f"Domicilio | {banda}", 0 
 
-    # Creamos la columna de agrupación y ordenamos físicamente el DF aquí
     df['LLAVE_ZOCALO'], df['TIPO_ORDEN'] = zip(*df.apply(crear_llave_visual, axis=1))
+    
+    # Ordenamiento físico para evitar zócalos repetidos
     df = df.sort_values(by=['TIPO_ORDEN', 'BANDA HORARIA', 'MODALIDAD DE ENTREGA'], ascending=[False, True, True])
 
     font_size, row_height = 9.5, 5
-    while font_size > 6.5:
-        pdf = PlanillaPDF(fecha_tit)
-        pdf.add_page()
-        widths = [28, 20, 32, 22, 22, 47, 25]
-        ultima_llave = None
-        resumen = {}
+    pdf = PlanillaPDF(fecha_tit)
+    pdf.add_page()
+    widths = [28, 20, 32, 22, 22, 47, 25]
+    ultima_llave = None
+    resumen_unificado = {}
 
-        for _, row in df.iterrows():
-            llave_actual = row['LLAVE_ZOCALO']
-            mod_real = str(row['MODALIDAD DE ENTREGA'])
-            banda_real = str(row['BANDA HORARIA'])
-            
-            # Conteo para el informe final
-            resumen[f"{mod_real} | {banda_real}"] = resumen.get(f"{mod_real} | {banda_real}", 0) + 1
-
-            # Dibujar Zócalo solo si cambia la LLAVE VISUAL
-            if llave_actual != ultima_llave:
-                pdf.set_fill_color(64, 64, 64)
-                pdf.set_text_color(255, 255, 255)
-                pdf.set_font("Times", 'B', font_size + 2)
-                pdf.cell(sum(widths), row_height + 1.5, f"--- {llave_actual} ---", border=1, ln=True, align='C', fill=True)
-                pdf.set_text_color(0, 0, 0)
-                pdf.set_font("Times", '', font_size)
-                ultima_llave = llave_actual
-
-            # Filas de datos
-            pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
-            pdf.cell(widths[1], row_height, mod_real[:10], border=1)
-            pdf.cell(widths[2], row_height, banda_real[:18], border=1)
-            pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
-            pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
-            pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
-            pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
-            pdf.ln()
-
-        # Informe final
-        if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
-        pdf.ln(5)
-        pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(0, 6, "Resumen de Pedidos:", ln=True, align='R')
-        pdf.set_font("Times", '', font_size)
-        for k, v in resumen.items():
-            pdf.cell(0, 4.5, f"{k}: {v}", ln=True, align='R')
-        pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(0, 8, f"TOTAL: {len(df)}", ln=True, align='R')
+    for _, row in df.iterrows():
+        llave_actual = row['LLAVE_ZOCALO']
         
-        if pdf.page_no() <= 15: break # Seguridad para el bucle
-        font_size -= 0.5
+        # Conteo para el resumen final (usando la llave unificada)
+        resumen_unificado[llave_actual] = resumen_unificado.get(llave_actual, 0) + 1
 
-    return pdf.output(dest='S').encode('latin-1')
+        # Dibujar Zócalo solo si cambia la LLAVE VISUAL
+        if llave_actual != ultima_llave:
+            pdf.set_fill_color(64, 64, 64)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Times", 'B', font_size + 2)
+            pdf.cell(sum(widths), row_height + 1.5, f"--- {llave_actual} ---", border=1, ln=True, align='C', fill=True)
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font("Times", '', font_size)
+            ultima_llave = llave_actual
+
+        # Filas de datos (usamos .get para evitar errores si falta una columna)
+        pdf.cell(widths[0], row_height, str(row.get('NUMERO PEDIDO', '')).replace(".0",""), border=1, align='C')
+        pdf.cell(widths[1], row_height, str(row.get('MODALIDAD DE ENTREGA', ''))[:10], border=1)
+        pdf.cell(widths[2], row_height, str(row.get('BANDA HORARIA', ''))[:18], border=1)
+        pdf.cell(widths[3], row_height, str(row.get('NOMBRE', ''))[:12], border=1)
+        pdf.cell(widths[4], row_height, str(row.get('APELLIDO', ''))[:12], border=1)
+        pdf.cell(widths[5], row_height, str(row.get('DIRECCIÓN', ''))[:31], border=1)
+        pdf.cell(widths[6], row_height, str(row.get('TEL. PARTICULAR', '')).split('.')[0][:13], border=1)
+        pdf.ln()
+
+    # Informe final unificado
+    if (pdf.h - pdf.get_y()) < 45: pdf.add_page()
+    pdf.ln(10)
+    pdf.set_font("Times", 'B', font_size + 1)
+    pdf.cell(0, 6, "Informe de pedidos al momento", ln=True, align='R')
+    pdf.set_font("Times", '', font_size)
+    
+    for k, v in resumen_unificado.items():
+        pdf.cell(0, 4.5, f"{k}: {v}", ln=True, align='R')
+    
+    pdf.set_font("Times", 'B', font_size + 1)
+    pdf.cell(0, 8, f"TOTAL: {len(df)}", ln=True, align='R')
+
+    # EL ARREGLO PARA EL ERROR: errors='ignore' para caracteres no soportados
+    return pdf.output(dest='S').encode('latin-1', errors='ignore')
