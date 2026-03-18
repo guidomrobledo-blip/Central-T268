@@ -8,7 +8,6 @@ def motor_limpieza(df):
     """Limpia y prepara los datos básicos."""
     df.columns = [str(c).strip() for c in df.columns]
     
-    # Extraer fecha para el título
     fecha_raw = df['FECHA ENTREGA'].iloc[0] if 'FECHA ENTREGA' in df.columns else "S/D"
     try:
         f_dt = pd.to_datetime(fecha_raw)
@@ -92,9 +91,18 @@ def generar_pdf_clientes(df, fecha_tit):
 
     df['LLAVE_ZOCALO'], df['TIPO_ORDEN'] = zip(*df.apply(crear_llave_visual, axis=1))
 
+    # 🔥 ORDEN CORRECTO POR HORA REAL
+    def obtener_hora_orden(banda):
+        match = re.search(r'(\d{2}):(\d{2})', str(banda))
+        if match:
+            return int(match.group(1)) * 60 + int(match.group(2))
+        return 9999
+
+    df['HORA_ORDEN'] = df['BANDA HORARIA'].apply(obtener_hora_orden)
+
     df = df.sort_values(
-        by=['TIPO_ORDEN', 'BANDA HORARIA', 'MODALIDAD DE ENTREGA'],
-        ascending=[False, True, True]
+        by=['TIPO_ORDEN', 'HORA_ORDEN'],
+        ascending=[True, True]  # Domicilio primero, luego Drive
     )
 
     font_size, row_height = 9.5, 5
@@ -143,10 +151,7 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
-        # =========================
-        # 🔥 INFORME FINAL AJUSTADO
-        # =========================
-
+        # ===== INFORME FINAL =====
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
 
@@ -155,13 +160,7 @@ def generar_pdf_clientes(df, fecha_tit):
         hora_actual = datetime.now().strftime("%H.%M")
 
         pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(
-            0,
-            6,
-            f"Resumen de Pedidos hasta el momento {hora_actual}hs:",
-            ln=True,
-            align='R'
-        )
+        pdf.cell(0, 6, f"Resumen de Pedidos hasta el momento {hora_actual}hs:", ln=True, align='R')
 
         resumen_procesado = {}
 
@@ -171,9 +170,7 @@ def generar_pdf_clientes(df, fecha_tit):
             except:
                 continue
 
-            modalidad_lower = modalidad.lower()
-
-            if "domicilio" in modalidad_lower:
+            if "domicilio" in modalidad.lower():
                 mod_final = "Domicilio"
                 tipo = 0
             else:
@@ -190,13 +187,7 @@ def generar_pdf_clientes(df, fecha_tit):
         pdf.set_font("Times", '', font_size)
 
         for (_, _, mod_final, banda), cantidad in resumen_ordenado:
-            pdf.cell(
-                0,
-                4.5,
-                f"{mod_final} | {banda}: [{cantidad}]",
-                ln=True,
-                align='R'
-            )
+            pdf.cell(0, 4.5, f"{mod_final} | {banda}: [{cantidad}]", ln=True, align='R')
 
         pdf.set_font("Times", 'B', font_size + 1)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
