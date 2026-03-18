@@ -143,20 +143,21 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
-        # ===== INFORME FINAL =====
+        # ===== INFORME FINAL (Ajustado) =====
 
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
 
         pdf.ln(5)
 
-        hora_actual = datetime.now().strftime("%H:%M")
+        # Ajuste para Zona Horaria Argentina (UTC-3)
+        hora_ar = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
 
         pdf.set_font("Times", 'B', font_size + 1)
         pdf.cell(
             0,
             6,
-            f"Resumen de Pedidos hasta el momento [{hora_actual}hs]",
+            f"Resumen de Pedidos hasta el momento [{hora_ar} hs]",
             ln=True,
             align='R'
         )
@@ -186,6 +187,7 @@ def generar_pdf_clientes(df, fecha_tit):
         pdf.set_font("Times", '', font_size)
 
         for (_, _, mod_final, banda), cantidad in resumen_ordenado:
+            # Se agrega ":" después de la banda horaria para coincidir con el diseño
             pdf.cell(0, 4.5, f"{mod_final} | {banda}: [{cantidad}]", ln=True, align='R')
 
         pdf.set_font("Times", 'B', font_size + 1)
