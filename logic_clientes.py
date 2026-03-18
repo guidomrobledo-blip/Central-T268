@@ -16,7 +16,6 @@ def motor_limpieza(df):
     except:
         fecha_tit_str = str(fecha_raw)
 
-    # Funciones de limpieza de nombres y direcciones
     def procesar_apellido_ajustado(texto):
         if pd.isna(texto) or str(texto).strip() == "": return ""
         partes = str(texto).split()
@@ -39,12 +38,12 @@ def motor_limpieza(df):
         nro_str = f" {nro}" if nro.lower() != 'nan' and nro != '' else ""
         return f"{calle}{nro_str}".strip()
 
-    # Aplicar limpiezas
     df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
     df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
     df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
     
     return df, fecha_tit_str
+
 
 class PlanillaPDF(FPDF):
     def __init__(self, fecha_tit):
@@ -68,24 +67,45 @@ class PlanillaPDF(FPDF):
             self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
         self.ln()
 
+
 def generar_pdf_clientes(df, fecha_tit):
-    # --- PASO CRÍTICO: RE-AGRUPAR ANTES DE DIBUJAR ---
+
+    # 🔧 FUNCION ROBUSTA DE MODALIDAD + LLAVE
     def crear_llave_visual(row):
         mod = str(row.get('MODALIDAD DE ENTREGA', ''))
         banda = str(row.get('BANDA HORARIA', ''))
-        if "Drive" in mod or "Sucursal" in mod:
-            return f"Drive/Sucursal | {banda}", 1 # Prioridad 1 para retiros
-        return f"Domicilio | {banda}", 0 # Prioridad 0 para domicilios
 
-    # Creamos la columna de agrupación y ordenamos físicamente el DF aquí
+        mod_upper = mod.upper()
+
+        if "DRIVE" in mod_upper or "SUCURSAL" in mod_upper:
+            return f"Drive/Sucursal | {banda}", 1
+        return f"Domicilio | {banda}", 0
+
+    # 🔧 FUNCION PARA ORDENAR HORARIOS CORRECTAMENTE
+    def extraer_hora_inicio(banda):
+        try:
+            hora = str(banda).split("a")[0].strip()
+            return datetime.strptime(hora, "%H:%M").time()
+        except:
+            return datetime.strptime("00:00", "%H:%M").time()
+
+    # Crear columnas auxiliares
     df['LLAVE_ZOCALO'], df['TIPO_ORDEN'] = zip(*df.apply(crear_llave_visual, axis=1))
-    df = df.sort_values(by=['TIPO_ORDEN', 'BANDA HORARIA', 'MODALIDAD DE ENTREGA'], ascending=[False, True, True])
+    df['HORA_ORDEN'] = df['BANDA HORARIA'].apply(extraer_hora_inicio)
+
+    # 🔥 ORDEN CORREGIDO
+    df = df.sort_values(
+        by=['TIPO_ORDEN', 'HORA_ORDEN'],
+        ascending=[True, True]
+    )
 
     font_size, row_height = 9.5, 5
+
     while font_size > 6.5:
         pdf = PlanillaPDF(fecha_tit)
         pdf.add_page()
         widths = [28, 20, 32, 22, 22, 47, 25]
+
         ultima_llave = None
         resumen = {}
 
@@ -93,11 +113,9 @@ def generar_pdf_clientes(df, fecha_tit):
             llave_actual = row['LLAVE_ZOCALO']
             mod_real = str(row['MODALIDAD DE ENTREGA'])
             banda_real = str(row['BANDA HORARIA'])
-            
-            # Conteo para el informe final
+
             resumen[f"{mod_real} | {banda_real}"] = resumen.get(f"{mod_real} | {banda_real}", 0) + 1
 
-            # Dibujar Zócalo solo si cambia la LLAVE VISUAL
             if llave_actual != ultima_llave:
                 pdf.set_fill_color(64, 64, 64)
                 pdf.set_text_color(255, 255, 255)
@@ -107,7 +125,6 @@ def generar_pdf_clientes(df, fecha_tit):
                 pdf.set_font("Times", '', font_size)
                 ultima_llave = llave_actual
 
-            # Filas de datos
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
             pdf.cell(widths[1], row_height, mod_real[:10], border=1)
             pdf.cell(widths[2], row_height, banda_real[:18], border=1)
@@ -118,17 +135,23 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.ln()
 
         # Informe final
-        if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
+        if (pdf.h - pdf.get_y()) < 35:
+            pdf.add_page()
+
         pdf.ln(5)
         pdf.set_font("Times", 'B', font_size + 1)
         pdf.cell(0, 6, "Resumen de Pedidos:", ln=True, align='R')
         pdf.set_font("Times", '', font_size)
+
         for k, v in resumen.items():
             pdf.cell(0, 4.5, f"{k}: {v}", ln=True, align='R')
+
         pdf.set_font("Times", 'B', font_size + 1)
         pdf.cell(0, 8, f"TOTAL: {len(df)}", ln=True, align='R')
-        
-        if pdf.page_no() <= 15: break # Seguridad para el bucle
+
+        if pdf.page_no() <= 15:
+            break
+
         font_size -= 0.5
 
     return pdf.output()
