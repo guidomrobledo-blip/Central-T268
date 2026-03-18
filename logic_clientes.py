@@ -91,7 +91,6 @@ def generar_pdf_clientes(df, fecha_tit):
 
     df['LLAVE_ZOCALO'], df['TIPO_ORDEN'] = zip(*df.apply(crear_llave_visual, axis=1))
 
-    # 🔥 ORDEN CORRECTO POR HORA REAL
     def obtener_hora_orden(banda):
         match = re.search(r'(\d{2}):(\d{2})', str(banda))
         if match:
@@ -102,7 +101,7 @@ def generar_pdf_clientes(df, fecha_tit):
 
     df = df.sort_values(
         by=['TIPO_ORDEN', 'HORA_ORDEN'],
-        ascending=[True, True]  # Domicilio primero, luego Drive
+        ascending=[True, True]
     )
 
     font_size, row_height = 9.5, 5
@@ -127,19 +126,12 @@ def generar_pdf_clientes(df, fecha_tit):
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
 
-                pdf.cell(
-                    sum(widths),
-                    row_height + 1.5,
-                    f"--- {llave_actual} ---",
-                    border=1,
-                    ln=True,
-                    align='C',
-                    fill=True
-                )
+                pdf.cell(sum(widths), row_height + 1.5,
+                         f"--- {llave_actual} ---",
+                         border=1, ln=True, align='C', fill=True)
 
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font("Times", '', font_size)
-
                 ultima_llave = llave_actual
 
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
@@ -152,15 +144,22 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.ln()
 
         # ===== INFORME FINAL =====
+
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
 
         pdf.ln(5)
 
-        hora_actual = datetime.now().strftime("%H.%M")
+        hora_actual = datetime.now().strftime("%H:%M")
 
         pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(0, 6, f"Resumen de Pedidos hasta el momento {hora_actual}hs:", ln=True, align='R')
+        pdf.cell(
+            0,
+            6,
+            f"Resumen de Pedidos hasta el momento [{hora_actual}hs]",
+            ln=True,
+            align='R'
+        )
 
         resumen_procesado = {}
 
@@ -171,7 +170,7 @@ def generar_pdf_clientes(df, fecha_tit):
                 continue
 
             if "domicilio" in modalidad.lower():
-                mod_final = "Domicilio"
+                mod_final = "Domicilios"
                 tipo = 0
             else:
                 mod_final = "Drive/Suc"
