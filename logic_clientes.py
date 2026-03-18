@@ -134,24 +134,56 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
-        # Informe final
+        # Informe final mejorado
+        from datetime import datetime
+        import re
+        
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
-
+        
         pdf.ln(5)
+        
+        # Hora actual
+        hora_actual = datetime.now().strftime("%H.%M")
+        
+        # Título
         pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(0, 6, "Resumen de Pedidos:", ln=True, align='R')
-        pdf.set_font("Times", '', font_size)
-
+        pdf.cell(0, 6, f"Resumen de Pedidos hasta el momento {hora_actual}hs:", ln=True, align='R')
+        
+        # --- PROCESAR RESUMEN ---
+        resumen_procesado = {}
+        
         for k, v in resumen.items():
-            pdf.cell(0, 4.5, f"{k}: {v}", ln=True, align='R')
-
+            try:
+                modalidad, banda = k.split(" | ")
+            except:
+                continue
+        
+            modalidad_lower = modalidad.lower()
+        
+            # Normalizar modalidad
+            if "domicilio" in modalidad_lower:
+                mod_final = "Domicilio"
+                tipo = 0
+            else:
+                mod_final = "Drive/Suc"
+                tipo = 1
+        
+            # Extraer hora inicial para ordenar
+            match = re.search(r'(\d{2}):(\d{2})', banda)
+            hora_orden = int(match.group(1)) * 60 + int(match.group(2)) if match else 9999
+        
+            resumen_procesado[(tipo, hora_orden, mod_final, banda)] = v
+        
+        # Ordenar correctamente
+        resumen_ordenado = sorted(resumen_procesado.items(), key=lambda x: (x[0][0], x[0][1]))
+        
+        # Imprimir líneas
+        pdf.set_font("Times", '', font_size)
+        
+        for (_, _, mod_final, banda), cantidad in resumen_ordenado:
+            pdf.cell(0, 4.5, f"{mod_final} | {banda}: [{cantidad}]", ln=True, align='R')
+        
+        # TOTAL
         pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(0, 8, f"TOTAL: {len(df)}", ln=True, align='R')
-
-        if pdf.page_no() <= 15:
-            break
-
-        font_size -= 0.5
-
-    return pdf.output()
+        pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
