@@ -1,5 +1,5 @@
 def generar_pdf_clientes(df, fecha_tit):
-    # 1. Agrupación física de los datos
+    # 1. Agrupación física (mantenemos tu lógica de Drive/Sucursal juntos)
     def crear_llave_visual(row):
         mod = str(row.get('MODALIDAD DE ENTREGA', ''))
         banda = str(row.get('BANDA HORARIA', ''))
@@ -15,12 +15,16 @@ def generar_pdf_clientes(df, fecha_tit):
     pdf.add_page()
     widths = [28, 20, 32, 22, 22, 47, 25]
     ultima_llave = None
+    
+    # IMPORTANTE: Diccionario para el resumen
     resumen = {}
 
     for _, row in df.iterrows():
         llave_actual = row['LLAVE_ZOCALO']
         
-        # --- CONTEO UNIFICADO PARA EL RESUMEN ---
+        # --- CAMBIO CLAVE AQUÍ ---
+        # Sumamos al conteo usando la LLAVE (Drive/Sucursal | Banda) 
+        # en lugar de la modalidad individual.
         resumen[llave_actual] = resumen.get(llave_actual, 0) + 1
 
         if llave_actual != ultima_llave:
@@ -32,7 +36,7 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.set_font("Times", '', font_size)
             ultima_llave = llave_actual
 
-        # Dibujo de filas (se mantiene igual)
+        # Dibujo de filas
         pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
         pdf.cell(widths[1], row_height, str(row['MODALIDAD DE ENTREGA'])[:10], border=1)
         pdf.cell(widths[2], row_height, str(row['BANDA HORARIA'])[:18], border=1)
@@ -42,18 +46,18 @@ def generar_pdf_clientes(df, fecha_tit):
         pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
         pdf.ln()
 
-    # Espacio para el informe final
-    if (pdf.h - pdf.get_y()) < 40: pdf.add_page()
+    # --- INFORME FINAL ---
+    if (pdf.h - pdf.get_y()) < 45: pdf.add_page()
     pdf.ln(10)
     pdf.set_font("Times", 'B', font_size + 1)
-    pdf.cell(0, 6, "Resumen Unificado por Banda Horaria:", ln=True, align='R')
+    pdf.cell(0, 6, "Informe de pedidos al momento", ln=True, align='R')
     pdf.set_font("Times", '', font_size)
     
-    # Imprimir el resumen con las nuevas llaves unificadas
-    for k, v in resumen.items():
-        pdf.cell(0, 5, f"{k}: {v} pedidos", ln=True, align='R')
+    # Imprimimos los totales usando las llaves unificadas
+    for nombre_grupo, total in resumen.items():
+        pdf.cell(0, 5, f"{nombre_grupo}: {total}", ln=True, align='R')
     
     pdf.set_font("Times", 'B', font_size + 1)
-    pdf.cell(0, 8, f"TOTAL GENERAL: {len(df)}", ln=True, align='R')
+    pdf.cell(0, 8, f"TOTAL: {len(df)}", ln=True, align='R')
 
     return pdf.output(dest='S').encode('latin-1')
