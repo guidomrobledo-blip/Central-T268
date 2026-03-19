@@ -2,10 +2,8 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import re
 from datetime import datetime, timedelta
 import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
-from fpdf import FPDF
 import os
 import json
 import hashlib
@@ -34,10 +32,7 @@ DIAS_SEMANA_ES = {
 
 def cargar_datos_mensuales():
     """Carga los datos del mes desde el archivo JSON. Reinicia si cambia de mes."""
-def motor_limpieza(df):
-    df.columns = [str(c).strip() for c in df.columns]
-    fecha_raw = df['FECHA ENTREGA'].iloc[0] if 'FECHA ENTREGA' in df.columns else "S/D"
-try:
+    try:
         if os.path.exists(DATA_FILE):
             with open(DATA_FILE, "r") as f:
                 datos = json.load(f)
@@ -60,162 +55,16 @@ def guardar_datos_mensuales(datos):
             json.dump(datos, f)
     except Exception:
         pass
-        f_dt = pd.to_datetime(fecha_raw)
-        fecha_tit_str = f_dt.strftime('%d/%m/%Y')
-    except:
-        fecha_tit_str = str(fecha_raw)
-
-    def procesar_apellido_ajustado(texto):
-        if pd.isna(texto) or str(texto).strip() == "": return ""
-        partes = str(texto).split()
-        excepciones = ['DA', 'DE', 'DI', 'DO', 'DU', 'LA', 'DEL', 'DAS', 'DOS']
-        resultado, i = [], 0
-        while i < len(partes) and len(resultado) < 2:
-            pal_upper = partes[i].upper()
-            if pal_upper in excepciones and i + 1 < len(partes):
-                resultado.append(f"{partes[i].title()} {partes[i+1].title()}")
-                i += 2
-            else:
-                resultado.append(partes[i].title()); i += 1
-        return " ".join(resultado)
-
-    def formatear_direccion_pro(row):
-        calle = str(row.get('CALLE', '')).strip().title()
-        dicc = {
-            "Avenida": "Av.", "Boulevard": "Bv.", "Cortada": "Cda.",
-            "Diagonal": "Diag.", "Pasaje": "Pje.", "Entre Rios": "E. Ríos",
-            "Sargento": "Sgto.", "General": "Gral.", "Doctor": "Dr.",
-            "Presidente": "Pres.", "Republica": "Rep.", "Batalla": "Bat.",
-            "Manuel Belgrano": "M. Belgrano", "Carlos Pellegrini": "C. Pellegrini",
-            "Jorge Newbery": "J. Newbery", "Juan Jose Paso": "J.J. Paso",
-            "Juan Manuel De Rosas": "J.M. de Rosas", "Martin Rodriguez": "M. Rodriguez",
-            "Ovidio": "Ov."
-        }
-        for k, v in dicc.items(): calle = calle.replace(k, v)
-        calle = re.sub(r'Pellegrini|Pelegrini', 'Pellegrini', calle, flags=re.IGNORECASE)
-        nro = str(row.get('NUMERO', '')).strip()
-        nro_str = f" {nro}" if nro.lower() != 'nan' and nro != '' else ""
-        depto_raw = str(row.get('DEPTO', '')).upper().strip()
-        excluir = ["DR", "NAN", "@ SC @ NRO @ DPTO", "@ SC", "@ NRO", "@ DPTO"]
-        corchete = ""
-        if depto_raw and not any(x == depto_raw for x in excluir):
-            if any(pb in depto_raw for pb in ["PLANTA BAJA", "P.B", "P/B", "PB"]): corchete = " [P/B]"
-            elif any(pa in depto_raw for pa in ["PLANTA ALTA", "P.ALTA", "P.A", "PLANTA.A", "PA"]): corchete = " [P/A]"
-            else:
-                piso_match = re.search(r'(?:PISO|P|PSO|P\.)\s*(\d+)', depto_raw)
-                dpto_match = re.search(r'(?:DEPTO|DEPARTAMENTO|DPTO|DPT|D\.|D)\s*([A-Z0-9]+)', depto_raw)
-                piso, dpto = (piso_match.group(1) if piso_match else ""), (dpto_match.group(1) if dpto_match else "")
-                if not piso and not dpto:
-                    partes = re.findall(r'([A-Z0-9]+)', depto_raw)
-                    if len(partes) >= 2: piso, dpto = partes[0], partes[1]
-                    elif len(partes) == 1: dpto = partes[0]
-                if piso and dpto: corchete = f" [{piso} - {dpto}]" if piso != dpto else f" [{piso}]"
-                elif piso: corchete = f" [{piso}]"
-                elif dpto: corchete = f" [{dpto}]"
-        return f"{calle}{nro_str}{corchete}".strip()
-
-    df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
-    df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
-    df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
-
-    mapping = {
-        "Domicilio | 10:00 a 14:00": 1, "Domicilio | 14:00 a 18:00": 2,
-        "Drive | 09:00 a 13:00": 3, "Sucursal | 09:00 a 13:00": 4,
-        "Drive | 13:00 a 18:00": 5, "Sucursal | 13:00 a 18:00": 6,
-        "Drive | 18:00 a 21:00": 7, "Sucursal | 18:00 a 21:00": 8
-    }
-
-    df['Prioridad'] = df.apply(lambda r: mapping.get(f"{r['MODALIDAD DE ENTREGA']} | {r['BANDA HORARIA']}", 99), axis=1)
-
-    return df.sort_values('Prioridad'), fecha_tit_str
-
-
-class PlanillaPDF(FPDF):
-    def __init__(self, fecha_tit):
-        super().__init__(orientation='P', unit='mm', format='A4')
-        self.fecha_tit = fecha_tit
-        self.set_margins(left=7, top=10, right=7)
-        self.set_auto_page_break(auto=True, margin=8)
-
-    def header(self):
-        if os.path.exists('carrefour+logo.png'):
-            self.image('carrefour+logo.png', x=7, y=8, w=55)
-
-        self.set_font("Times", 'B', 11)
-        self.set_xy(100, 10)
-        self.multi_cell(100, 5, f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]", align='R')
-
-        self.ln(6)
-        self.set_fill_color(240, 240, 240)
-        self.set_font("Times", 'B', 9)
-
-        cols = ["Nro PEDIDO", "MODALIDAD", "BANDA HORARIA", "NOMBRE", "APELLIDO", "DIRECCIÓN", "TELÉFONO"]
-        widths = [28, 20, 32, 22, 22, 47, 25]
-
-        for i, col in enumerate(cols):
-            self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
-        self.ln()
-
-
-def generar_pdf_clientes(df, fecha_tit):
-    font_size, row_height = 9.5, 5
-
-    while font_size > 6.5:
-        pdf = PlanillaPDF(fecha_tit)
-        pdf.add_page()
-        widths = [28, 20, 32, 22, 22, 47, 25]
-
-        ultima_llave = None
-        resumen = {}
-
-        # 🔥 ORDEN QUIRÚRGICO (CLAVE DEL FIX)
-        df_render = df.copy()
-
-        def orden_banda(banda):
-            orden = {
-                "10:00 a 14:00": 1,
-                "14:00 a 18:00": 2,
-                "09:00 a 13:00": 3,
-                "13:00 a 18:00": 4,
-                "18:00 a 21:00": 5
-            }
-            return orden.get(banda, 99)
-
-        df_render['orden_banda'] = df_render['BANDA HORARIA'].apply(orden_banda)
-        df_render['orden_tipo'] = df_render['MODALIDAD DE ENTREGA'].apply(lambda x: 0 if x == "Domicilio" else 1)
-
-        df_render = df_render.sort_values(['orden_banda', 'orden_tipo'])
-
-        def construir_llave(row):
-            if row['MODALIDAD DE ENTREGA'] == "Domicilio":
-                return f"Domicilio | {row['BANDA HORARIA']}"
-            else:
-                return f"Drive/Sucursal | {row['BANDA HORARIA']}"
-
-        def construir_llave_resumen(row):
-            if row['MODALIDAD DE ENTREGA'] == "Domicilio":
-                return f"Domicilio | {row['BANDA HORARIA']}"
-            else:
-                return f"Drive/Suc | {row['BANDA HORARIA']}"
-
-        for _, row in df_render.iterrows():
-            llave = construir_llave(row)
-            llave_resumen = construir_llave_resumen(row)
 
 def reiniciar_contador_mensual():
     """Reinicia el contador mensual."""
     datos = {"mes": hoy_ar.strftime("%Y-%m"), "pedidos_por_dia": {}, "archivos_procesados": [], "modalidades": {"DOMICILIOS": 0, "DRIVE": 0, "SUCURSAL": 0}}
     guardar_datos_mensuales(datos)
     return datos
-            resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
 
 def obtener_hash_archivo(archivo_bytes):
     """Genera un hash unico para identificar archivos duplicados."""
     return hashlib.md5(archivo_bytes).hexdigest()
-            if llave != ultima_llave:
-                pdf.set_fill_color(64, 64, 64)
-                pdf.set_text_color(255, 255, 255)
-                pdf.set_font("Times", 'B', font_size + 2)
 
 def extraer_fecha_entrega(df):
     """Extrae la fecha de la columna FECHA ENTREGA del DataFrame."""
@@ -246,8 +95,6 @@ def extraer_fecha_entrega(df):
         return None
     except Exception:
         return None
-                pdf.cell(sum(widths), row_height + 1.5,
-                         f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
 
 def contar_modalidades(df):
     """Cuenta las modalidades de entrega del DataFrame."""
@@ -293,18 +140,7 @@ def contar_modalidades(df):
                 modalidades_conteo["SUCURSAL"] += 1
     
     return modalidades_conteo
-                pdf.set_text_color(0, 0, 0)
-                pdf.set_font("Times", '', font_size)
-                ultima_llave = llave
 
-            pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
-            pdf.cell(widths[1], row_height, str(row['MODALIDAD DE ENTREGA'])[:10], border=1)
-            pdf.cell(widths[2], row_height, str(row['BANDA HORARIA'])[:18], border=1)
-            pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
-            pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
-            pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
-            pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
-            pdf.ln()
 
 def registrar_pedidos_cdp(archivo_bytes, df):
     """Registra los pedidos del archivo CDP si no fue procesado antes."""
@@ -327,8 +163,6 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     # Registrar los pedidos para esa fecha
     fecha_str = fecha_entrega.strftime("%Y-%m-%d")
     cantidad_pedidos = len(df)
-        if (pdf.h - pdf.get_y()) < 35:
-            pdf.add_page()
 
     # Guardar la cantidad de pedidos para esa fecha
     datos["pedidos_por_dia"][fecha_str] = cantidad_pedidos
@@ -345,7 +179,6 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     
     guardar_datos_mensuales(datos)
     return datos, True
-        pdf.ln(4)
 
 def obtener_datos_semana(datos_mensuales, inicio_semana):
     """Obtiene los datos de pedidos para la semana especificada."""
@@ -367,7 +200,6 @@ def obtener_datos_semana(datos_mensuales, inicio_semana):
         pedidos_semana.append(pedidos)
     
     return dias_labels, pedidos_semana
-        hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
 
 def obtener_datos_mes(datos_mensuales):
     """Obtiene los datos de pedidos para todo el mes."""
@@ -392,31 +224,22 @@ def obtener_datos_mes(datos_mensuales):
         dia_actual += timedelta(days=1)
     
     return dias_labels, pedidos_mes
-        pdf.set_font("Times", 'B', font_size + 1.5)
-        pdf.cell(0, 6,
-                 f"Informe de pedidos al momento [{hora_arg} hs] (zona horaria Argentina)",
-                 ln=True, align='R')
 
 def calcular_total_mes(datos_mensuales):
     """Calcula el total de pedidos del mes (solo dias con datos)."""
     pedidos_por_dia = datos_mensuales.get("pedidos_por_dia", {})
     return sum(pedidos_por_dia.values())
-        pdf.set_font("Times", '', font_size + 0.5)
 
 # --- CSS DARK MINIMALIST DASHBOARD ---
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        for b, t in resumen.items():
-            pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
 
      .title-main {
     text-shadow: 
         0 1px 0 rgba(255,255,255,0.04),
         0 6px 18px rgba(0,0,0,0.45);
 }
-        pdf.set_font("Times", 'B', font_size + 2)
-        pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
 
 .title-main::after {
     content: "";
@@ -1027,8 +850,6 @@ with col_izq:
             st.warning("Informe solo procesa archivos con fecha de mañana")
     
     st.markdown('</div>', unsafe_allow_html=True)
-        if pdf.page_no() <= 2:
-            break
 
 with col_der:
     # --- VISUALIZATION PANEL ---
@@ -1301,8 +1122,6 @@ with col_der:
         st.info("Suba un archivo de CDP para visualizar las metricas del dia")
     
     st.markdown('</div>', unsafe_allow_html=True)
-        font_size -= 0.5
-        row_height -= 0.3
 
 # --- FOOTER ---
 st.markdown('''
@@ -1310,4 +1129,3 @@ st.markdown('''
         CENTRAL DE ARMADO T268 | CARREFOUR ONLINE | ROSARIO
     </div>
 ''', unsafe_allow_html=True)
-    return bytes(pdf.output())
