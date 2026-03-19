@@ -65,14 +65,18 @@ def motor_limpieza(df):
     df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
     df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
     df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
+
     mapping = {
         "Domicilio | 10:00 a 14:00": 1, "Domicilio | 14:00 a 18:00": 2,
         "Drive | 09:00 a 13:00": 3, "Sucursal | 09:00 a 13:00": 4,
         "Drive | 13:00 a 18:00": 5, "Sucursal | 13:00 a 18:00": 6,
         "Drive | 18:00 a 21:00": 7, "Sucursal | 18:00 a 21:00": 8
     }
+
     df['Prioridad'] = df.apply(lambda r: mapping.get(f"{r['MODALIDAD DE ENTREGA']} | {r['BANDA HORARIA']}", 99), axis=1)
+
     return df.sort_values('Prioridad'), fecha_tit_str
+
 
 class PlanillaPDF(FPDF):
     def __init__(self, fecha_tit):
@@ -80,55 +84,87 @@ class PlanillaPDF(FPDF):
         self.fecha_tit = fecha_tit
         self.set_margins(left=7, top=10, right=7)
         self.set_auto_page_break(auto=True, margin=8)
+
     def header(self):
-        if os.path.exists('carrefour+logo.png'): self.image('carrefour+logo.png', x=7, y=8, w=55)
+        if os.path.exists('carrefour+logo.png'):
+            self.image('carrefour+logo.png', x=7, y=8, w=55)
+
         self.set_font("Times", 'B', 11)
         self.set_xy(100, 10)
         self.multi_cell(100, 5, f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]", align='R')
+
         self.ln(6)
-        self.set_fill_color(240, 240, 240); self.set_font("Times", 'B', 9)
-        cols, widths = ["Nro PEDIDO", "MODALIDAD", "BANDA HORARIA", "NOMBRE", "APELLIDO", "DIRECCIÓN", "TELÉFONO"], [28, 20, 32, 22, 22, 47, 25]
-        for i, col in enumerate(cols): self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
+        self.set_fill_color(240, 240, 240)
+        self.set_font("Times", 'B', 9)
+
+        cols = ["Nro PEDIDO", "MODALIDAD", "BANDA HORARIA", "NOMBRE", "APELLIDO", "DIRECCIÓN", "TELÉFONO"]
+        widths = [28, 20, 32, 22, 22, 47, 25]
+
+        for i, col in enumerate(cols):
+            self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
         self.ln()
+
 
 def generar_pdf_clientes(df, fecha_tit):
     font_size, row_height = 9.5, 5
+
     while font_size > 6.5:
         pdf = PlanillaPDF(fecha_tit)
         pdf.add_page()
         widths = [28, 20, 32, 22, 22, 47, 25]
-        ultima_llave, resumen = None, {}
+
+        ultima_llave = None
+        resumen = {}
+
+        # 🔥 ORDEN QUIRÚRGICO (CLAVE DEL FIX)
+        df_render = df.copy()
+
+        def orden_banda(banda):
+            orden = {
+                "10:00 a 14:00": 1,
+                "14:00 a 18:00": 2,
+                "09:00 a 13:00": 3,
+                "13:00 a 18:00": 4,
+                "18:00 a 21:00": 5
+            }
+            return orden.get(banda, 99)
+
+        df_render['orden_banda'] = df_render['BANDA HORARIA'].apply(orden_banda)
+        df_render['orden_tipo'] = df_render['MODALIDAD DE ENTREGA'].apply(lambda x: 0 if x == "Domicilio" else 1)
+
+        df_render = df_render.sort_values(['orden_banda', 'orden_tipo'])
 
         def construir_llave(row):
-            modalidad = row['MODALIDAD DE ENTREGA']
-            banda = row['BANDA HORARIA']
-            if modalidad == "Domicilio":
-                return f"Domicilio | {banda}"
+            if row['MODALIDAD DE ENTREGA'] == "Domicilio":
+                return f"Domicilio | {row['BANDA HORARIA']}"
             else:
-                return f"Drive/Sucursal | {banda}"
+                return f"Drive/Sucursal | {row['BANDA HORARIA']}"
 
         def construir_llave_resumen(row):
-            modalidad = row['MODALIDAD DE ENTREGA']
-            banda = row['BANDA HORARIA']
-            if modalidad == "Domicilio":
-                return f"Domicilio | {banda}"
+            if row['MODALIDAD DE ENTREGA'] == "Domicilio":
+                return f"Domicilio | {row['BANDA HORARIA']}"
             else:
-                return f"Drive/Suc | {banda}"
+                return f"Drive/Suc | {row['BANDA HORARIA']}"
 
-        for _, row in df.iterrows():
+        for _, row in df_render.iterrows():
             llave = construir_llave(row)
             llave_resumen = construir_llave_resumen(row)
 
             resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
 
             if llave != ultima_llave:
-                pdf.set_fill_color(64, 64, 64); pdf.set_text_color(255, 255, 255)
+                pdf.set_fill_color(64, 64, 64)
+                pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
-                pdf.cell(sum(widths), row_height + 1.5, f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
-                pdf.set_text_color(0, 0, 0); pdf.set_font("Times", '', font_size)
+
+                pdf.cell(sum(widths), row_height + 1.5,
+                         f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
+
+                pdf.set_text_color(0, 0, 0)
+                pdf.set_font("Times", '', font_size)
                 ultima_llave = llave
 
-            pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
+            pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
             pdf.cell(widths[1], row_height, str(row['MODALIDAD DE ENTREGA'])[:10], border=1)
             pdf.cell(widths[2], row_height, str(row['BANDA HORARIA'])[:18], border=1)
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
@@ -137,21 +173,30 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
-        if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
+        if (pdf.h - pdf.get_y()) < 35:
+            pdf.add_page()
+
         pdf.ln(4)
 
         hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
+
         pdf.set_font("Times", 'B', font_size + 1.5)
-        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg} hs]
+        pdf.cell(0, 6,
+                 f"Informe de pedidos al momento [{hora_arg} hs] (zona horaria Argentina)",
+                 ln=True, align='R')
 
         pdf.set_font("Times", '', font_size + 0.5)
+
         for b, t in resumen.items():
             pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
 
         pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
 
-        if pdf.page_no() <= 2: break
-        font_size -= 0.5; row_height -= 0.3
+        if pdf.page_no() <= 2:
+            break
+
+        font_size -= 0.5
+        row_height -= 0.3
 
     return bytes(pdf.output())
