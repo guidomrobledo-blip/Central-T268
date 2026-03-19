@@ -98,15 +98,36 @@ def generar_pdf_clientes(df, fecha_tit):
         pdf.add_page()
         widths = [28, 20, 32, 22, 22, 47, 25]
         ultima_llave, resumen = None, {}
+
+        def construir_llave(row):
+            modalidad = row['MODALIDAD DE ENTREGA']
+            banda = row['BANDA HORARIA']
+            if modalidad == "Domicilio":
+                return f"Domicilio | {banda}"
+            else:
+                return f"Drive/Sucursal | {banda}"
+
+        def construir_llave_resumen(row):
+            modalidad = row['MODALIDAD DE ENTREGA']
+            banda = row['BANDA HORARIA']
+            if modalidad == "Domicilio":
+                return f"Domicilio | {banda}"
+            else:
+                return f"Drive/Suc | {banda}"
+
         for _, row in df.iterrows():
-            llave = f"{row['MODALIDAD DE ENTREGA']} | {row['BANDA HORARIA']}"
-            resumen[llave] = resumen.get(llave, 0) + 1
+            llave = construir_llave(row)
+            llave_resumen = construir_llave_resumen(row)
+
+            resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
+
             if llave != ultima_llave:
                 pdf.set_fill_color(64, 64, 64); pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
                 pdf.cell(sum(widths), row_height + 1.5, f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
                 pdf.set_text_color(0, 0, 0); pdf.set_font("Times", '', font_size)
                 ultima_llave = llave
+
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0",""), border=1, align='C')
             pdf.cell(widths[1], row_height, str(row['MODALIDAD DE ENTREGA'])[:10], border=1)
             pdf.cell(widths[2], row_height, str(row['BANDA HORARIA'])[:18], border=1)
@@ -115,15 +136,22 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
+
         if (pdf.h - pdf.get_y()) < 35: pdf.add_page()
         pdf.ln(4)
+
         hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
         pdf.set_font("Times", 'B', font_size + 1.5)
-        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg}]", ln=True, align='R')
+        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg} hs] (zona horaria Argentina)", ln=True, align='R')
+
         pdf.set_font("Times", '', font_size + 0.5)
-        for b, t in resumen.items(): pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
+        for b, t in resumen.items():
+            pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
+
         pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
+
         if pdf.page_no() <= 2: break
         font_size -= 0.5; row_height -= 0.3
+
     return bytes(pdf.output())
