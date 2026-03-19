@@ -142,7 +142,7 @@ def generar_pdf_clientes(df, fecha_tit):
 
         hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
         pdf.set_font("Times", 'B', font_size + 1.5)
-        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg} hs], ln=True, align='R')
+        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg} hs] , ln=True, align='R')
 
         pdf.set_font("Times", '', font_size + 0.5)
         for b, t in resumen.items():
