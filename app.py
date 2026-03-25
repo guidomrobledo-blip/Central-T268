@@ -1,4 +1,10 @@
+import streamlit as st
 
+params = st.query_params
+
+if "ping" in params:
+    st.write("ok")
+    st.stop()
 import streamlit as st
 import pandas as pd
 import numpy as np
