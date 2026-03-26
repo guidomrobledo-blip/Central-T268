@@ -7,6 +7,25 @@ import os
 import json
 import hashlib
 
+# 🎨 ESTILOS PERSONALIZADOS
+st.markdown("""
+<style>
+
+/* Nombre archivo */
+[data-testid="stFileUploader"] span {
+    color: #FFFFFF !important;
+    font-weight: 500;
+    text-shadow: 0 0 8px rgba(139, 92, 246, 0.25);
+}
+
+/* Tamaño archivo */
+[data-testid="stFileUploader"] small {
+    color: #A78BFA !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 # --- CONFIGURACION ---
 st.set_page_config(
     page_title="Panel Operaciones Online Carrefour",
