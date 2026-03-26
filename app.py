@@ -281,16 +281,16 @@ st.markdown("""
     /* ===== MAIN BACKGROUND WITH GRADIENT GLOW ===== */
     .stApp {
         background: 
-            radial-gradient(ellipse 140% 120% at 50% -5%, 
-                rgba(99, 130, 255, 0.45) 0%, 
-                rgba(79, 110, 230, 0.20) 35%, 
-                rgba(59, 90, 200, 0.08) 55%,
-                transparent 85%),
+            radial-gradient(ellipse 160% 130% at 50% -10%, 
+                rgba(120, 150, 255, 0.65) 0%, 
+                rgba(99, 130, 255, 0.30) 35%, 
+                rgba(79, 110, 230, 0.12) 60%,
+                transparent 90%),
             linear-gradient(180deg, 
-                #1e2540 0%, 
-                #182035 20%, 
-                #131a2e 50%, 
-                #0F172A 100%) !important;
+                #2a3260 0%, 
+                #20295a 20%, 
+                #18224a 50%, 
+                #131c3f 100%) !important;
         font-family: 'Inter', sans-serif !important;
     }
     
@@ -362,7 +362,7 @@ st.markdown("""
     color: #FFFFFF !important;
     }
     .subtitle-main {
-        color: #A5B4FC;
+        color: #C7D2FE;
         font-size: 0.9em;
         margin: 0;
         font-weight: 400;
@@ -378,15 +378,15 @@ st.markdown("""
     /* ===== CARDS ===== */
     .glass-card {
         background: linear-gradient(145deg, 
-            rgba(35, 45, 75, 0.6) 0%, 
-            rgba(22, 30, 50, 0.95) 30%, 
-            rgba(18, 25, 45, 0.98) 100%);
+            rgba(45, 55, 95, 0.55) 0%, 
+            rgba(28, 38, 70, 0.85) 40%, 
+            rgba(20, 30, 60, 0.90) 100%);
         border-radius: 14px;
         padding: 24px;
         margin-bottom: 20px;
         box-shadow: 
-            0 4px 25px rgba(0, 0, 0, 0.4),
-            0 1px 3px rgba(0, 0, 0, 0.2);
+            0 4px 25px rgba(0, 0, 0, 0.35),
+            0 0 25px rgba(99, 130, 255, 0.12);
         border: 1px solid rgba(99, 130, 255, 0.12);
         border-top: 2px solid rgba(99, 130, 255, 0.30);
     }
