@@ -62,7 +62,8 @@ def generar_pdf_domicilios(df, fecha_tit):
         df_banda = df_logistica[df_logistica['BANDA HORARIA'] == banda].reset_index(drop=True)
 
         # 🔒 Control antes del bloque de banda (zócalo + encabezado)
-        if pdf.get_y() + (h_celda * 2) > limite_inferior:
+        buffer = 3  
+        if pdf.get_y() + h_celda > (limite_inferior - buffer):
             break
 
         # Zócalo Azul
