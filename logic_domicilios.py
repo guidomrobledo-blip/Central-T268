@@ -47,7 +47,7 @@ def generar_pdf_domicilios(df, fecha_tit):
     pdf.add_page()
 
     # 🔒 Límite inferior fijo
-    limite_inferior = 297 - 5  # margen inferior de 12mm
+    limite_inferior = 297 - 8  # margen inferior de 12mm
 
     # AJUSTE DINÁMICO (Funciona: Mantiene 1 sola página)
     total_pedidos = len(df_logistica)
@@ -84,7 +84,7 @@ def generar_pdf_domicilios(df, fecha_tit):
         # Filas de Datos
         for i, row in df_banda.iterrows():
             # 🔒 Control de margen inferior por fila
-            if pdf.get_y() + h_celda > limite_inferior:
+            if pdf.get_y() + (h_celda * 0.5) > limite_inferior:
                 break
 
             fill = (i % 2 == 1)
