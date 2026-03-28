@@ -46,6 +46,9 @@ def generar_pdf_domicilios(df, fecha_tit):
     pdf = PDFLogistica(fecha_tit)
     pdf.add_page()
 
+    # 🔒 Límite inferior fijo
+    limite_inferior = 297 - 12  # margen inferior de 12mm
+
     # AJUSTE DINÁMICO (Funciona: Mantiene 1 sola página)
     total_pedidos = len(df_logistica)
     num_bandas = len(df_logistica['BANDA HORARIA'].unique())
@@ -57,6 +60,10 @@ def generar_pdf_domicilios(df, fecha_tit):
 
     for banda in df_logistica['BANDA HORARIA'].unique():
         df_banda = df_logistica[df_logistica['BANDA HORARIA'] == banda].reset_index(drop=True)
+
+        # 🔒 Control antes del bloque de banda (zócalo + encabezado)
+        if pdf.get_y() + (h_celda * 2) > limite_inferior:
+            break
 
         # Zócalo Azul
         pdf.set_fill_color(0, 70, 145)
@@ -76,6 +83,10 @@ def generar_pdf_domicilios(df, fecha_tit):
 
         # Filas de Datos
         for i, row in df_banda.iterrows():
+            # 🔒 Control de margen inferior por fila
+            if pdf.get_y() + h_celda > limite_inferior:
+                break
+
             fill = (i % 2 == 1)
             pdf.set_fill_color(245, 245, 245)
 
