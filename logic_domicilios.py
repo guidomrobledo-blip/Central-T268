@@ -1,5 +1,4 @@
 from fpdf import FPDF
-from datetime import datetime
 
 class DomiciliosPDF(FPDF):
 
@@ -20,14 +19,12 @@ def generar_pdf_domicilios(df, fecha_str):
     pdf.set_auto_page_break(auto=False)
     pdf.set_margins(left=7, top=10, right=7)
 
-    # 👉 Ajustado a tu llamada real
     pdf.titulo = f"Domicilios por visitar hoy: {fecha_str}"
 
     pdf.add_page()
 
-    # 🔧 CONFIG
     h_celda = 5
-    limite_inferior = 297 - 12  # ajustable
+    limite_inferior = 297 - 12
 
     bandas = df["BANDA HORARIA"].unique()
 
@@ -35,15 +32,12 @@ def generar_pdf_domicilios(df, fecha_str):
 
         df_banda = df[df["BANDA HORARIA"] == banda]
 
-        # 🔒 Control inicial
         if pdf.get_y() + (h_celda * 3) > limite_inferior:
             pdf.add_page()
 
-        # 🧾 Banda
         pdf.set_font("Arial", "B", 9)
         pdf.cell(0, 6, f"--- Domicilio | {banda} ---", ln=True)
 
-        # 🧾 Encabezado
         pdf.set_font("Arial", "B", 8)
         pdf.cell(10, 6, "#", border=1)
         pdf.cell(30, 6, "Nro Pedido", border=1)
@@ -55,7 +49,6 @@ def generar_pdf_domicilios(df, fecha_str):
 
         for _, row in df_banda.iterrows():
 
-            # 🧠 CONTROL CLAVE
             if pdf.get_y() + h_celda > limite_inferior:
                 pdf.add_page()
 
@@ -69,7 +62,6 @@ def generar_pdf_domicilios(df, fecha_str):
                 pdf.cell(35, 6, "Banda Horaria", border=1)
                 pdf.cell(0, 6, "Dirección", border=1, ln=True)
 
-            # 🧾 Fila
             pdf.set_font("Arial", "", 8)
             pdf.cell(10, h_celda, str(contador), border=1)
             pdf.cell(30, h_celda, str(row.get("Nro Pedido", "")), border=1)
@@ -81,7 +73,6 @@ def generar_pdf_domicilios(df, fecha_str):
 
         pdf.ln(2)
 
-    nombre_archivo = f"Domicilios_{fecha_str.replace('/', '_')}.pdf"
-    pdf.output(nombre_archivo)
-
-    return nombre_archivo
+    # 🔥 CLAVE PARA STREAMLIT
+    pdf_bytes = pdf.output(dest='S').encode('latin-1')
+    return pdf_bytes
