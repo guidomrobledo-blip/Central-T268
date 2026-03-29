@@ -62,7 +62,7 @@ def generar_pdf_domicilios(df, fecha_tit):
         pdf.set_fill_color(0, 70, 145)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', f_size_datos + 2)
-        pdf.cell(0, h_celda + 1, f"--- Domicilio | {banda} ---", 1, 1, 'C', True)
+        pdf.cell(0, h_celda + 1, f"--- Domicilios | {banda} ---", 1, 1, 'C', True)
 
         # Encabezado Gris
         pdf.set_fill_color(220, 220, 220)
