@@ -116,7 +116,6 @@ def generar_pdf_clientes(df, fecha_tit):
         ultima_llave = None
         resumen = {}
 
-        # 🔥 ORDEN QUIRÚRGICO (CLAVE DEL FIX)
         df_render = df.copy()
 
         def orden_banda(banda):
@@ -146,13 +145,31 @@ def generar_pdf_clientes(df, fecha_tit):
             else:
                 return f"Drive/Suc | {row['BANDA HORARIA']}"
 
+        # 🔥 función para insertar filas vacías
+        def insertar_filas_vacias(pdf, widths, row_height, cantidad=3):
+            for _ in range(cantidad):
+                if (pdf.h - pdf.get_y()) < 20:
+                    pdf.add_page()
+                for w in widths:
+                    pdf.cell(w, row_height, "", border=1)
+                pdf.ln()
+
+        grupos_objetivo = {
+            "Domicilio | 10:00 a 14:00",
+            "Domicilio | 14:00 a 18:00"
+        }
+
         for _, row in df_render.iterrows():
             llave = construir_llave(row)
             llave_resumen = construir_llave_resumen(row)
 
             resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
 
+            # 🔥 detectar fin de grupo anterior
             if llave != ultima_llave:
+                if ultima_llave in grupos_objetivo:
+                    insertar_filas_vacias(pdf, widths, row_height, 3)
+
                 pdf.set_fill_color(64, 64, 64)
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
@@ -173,6 +190,10 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
+        # 🔥 manejar último grupo
+        if ultima_llave in grupos_objetivo:
+            insertar_filas_vacias(pdf, widths, row_height, 3)
+
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
 
@@ -182,11 +203,11 @@ def generar_pdf_clientes(df, fecha_tit):
 
         pdf.set_font("Times", 'B', font_size + 1.5)
         pdf.cell(
-        0,
-        6,
-        f"Informe de pedidos al momento [{hora_arg} hs]",
-        ln=True,
-        align='R'
+            0,
+            6,
+            f"Informe de pedidos al momento [{hora_arg} hs]",
+            ln=True,
+            align='R'
         )
 
         pdf.set_font("Times", '', font_size + 0.5)
