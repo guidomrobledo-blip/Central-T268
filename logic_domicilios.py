@@ -120,7 +120,11 @@ def generar_pdf_domicilios(df, fecha_tit):
             pdf.cell(w_banda, h_celda, str(row['BANDA HORARIA']), 1, 0, 'C', fill)
 
             dir_texto = str(row['DIRECCIÓN'])[:65]
-            pdf.cell(w_dir, h_celda, dir_texto, 1, 1, 'L', fill)
+            x_actual = pdf.get_x()
+            y_actual = pdf.get_y()
+            pdf.cell(w_dir, h_celda, '', 1, 0, 'L', fill)  # dibuja el borde
+            pdf.set_xy(x_actual + 2, y_actual)  # ← sangría de 2mm
+            pdf.cell(w_dir - 2, h_celda, dir_texto, 0, 1, 'L', fill)  # texto sin borde
 
         pdf.ln(2)
 
