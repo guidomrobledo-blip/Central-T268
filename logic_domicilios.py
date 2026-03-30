@@ -8,9 +8,12 @@ class PDFLogistica(FPDF):
         self.fecha_tit = fecha_tit
         self.set_margins(left=10, top=7, right=10)
         self.set_auto_page_break(False)
+        self.mostrar_header = True  # 🔹 Control de header
 
     def header(self):
-        # Logos
+        if not self.mostrar_header:
+            return
+
         if os.path.exists("carrefour+logo.png"):
             self.image("carrefour+logo.png", 10, 7, 45)
         if os.path.exists("imagen_5.png"):
@@ -38,7 +41,6 @@ def dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_ban
 
 
 def generar_pdf_domicilios(df, fecha_tit):
-    # Filtrado
     df_logistica = df[df['MODALIDAD DE ENTREGA'].str.contains('Domicilio', case=False, na=False)].copy()
 
     if df_logistica.empty:
@@ -48,7 +50,6 @@ def generar_pdf_domicilios(df, fecha_tit):
         pdf_v.cell(190, 50, "SIN PEDIDOS DE DOMICILIO", 0, 1, 'C')
         return bytes(pdf_v.output())
 
-    # Orden de bandas
     prioridad_map = {
         "10:00 a 14:00": 1, "14:00 a 18:00": 2, "09:00 a 13:00": 3,
         "13:00 a 18:00": 4, "18:00 a 21:00": 5, "07:00 a 11:00": 6,
@@ -61,11 +62,14 @@ def generar_pdf_domicilios(df, fecha_tit):
     pdf = PDFLogistica(fecha_tit)
     pdf.add_page()
 
-    # 🔹 CONFIGURACIÓN FIJA (multipágina)
+    # 🔹 Solo la primera página tiene header
+    pdf.mostrar_header = False
+
+    # 🔹 Configuración fija
     h_celda = 7
     f_size_datos = 9
 
-    # 🔹 Márgenes reales
+    # 🔹 Márgenes
     MARGEN_INFERIOR = 10
     LIMITE_Y = 297 - MARGEN_INFERIOR
 
@@ -75,33 +79,28 @@ def generar_pdf_domicilios(df, fecha_tit):
     for banda in df_logistica['BANDA HORARIA'].unique():
         df_banda = df_logistica[df_logistica['BANDA HORARIA'] == banda].reset_index(drop=True)
 
-        # 🔹 Control antes de dibujar bloque
+        # 🔹 Control de espacio antes del bloque
         if pdf.get_y() + (h_celda * 2) > LIMITE_Y:
             pdf.add_page()
+            dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_banda, w_dir)
 
-        # Zócalo azul
+        # 🔹 Zócalo azul SOLO al iniciar banda
         pdf.set_fill_color(0, 70, 145)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', f_size_datos + 2)
         pdf.cell(0, h_celda + 1, f"--- Domicilio | {banda} ---", 1, 1, 'C', True)
 
-        # Encabezado
+        # 🔹 Encabezado
         dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_banda, w_dir)
 
-        # Filas
+        # 🔹 Filas
         for i, row in df_banda.iterrows():
 
-            # 🔴 CONTROL DE CORTE
+            # 🔴 Corte de página
             if pdf.get_y() + h_celda > LIMITE_Y:
                 pdf.add_page()
 
-                # Reimprimir banda
-                pdf.set_fill_color(0, 70, 145)
-                pdf.set_text_color(255, 255, 255)
-                pdf.set_font('Arial', 'B', f_size_datos + 2)
-                pdf.cell(0, h_celda + 1, f"--- Domicilio | {banda} ---", 1, 1, 'C', True)
-
-                # Reimprimir encabezado
+                # SOLO encabezado gris (sin zócalo ni header)
                 dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_banda, w_dir)
 
             fill = (i % 2 == 1)
