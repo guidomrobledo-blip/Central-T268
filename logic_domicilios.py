@@ -8,7 +8,7 @@ class PDFLogistica(FPDF):
         self.fecha_tit = fecha_tit
         self.set_margins(left=10, top=7, right=10)
         self.set_auto_page_break(False)
-        self.mostrar_header = True  # 🔹 Control de header
+        self.mostrar_header = True  # control
 
     def header(self):
         if not self.mostrar_header:
@@ -60,47 +60,48 @@ def generar_pdf_domicilios(df, fecha_tit):
     df_logistica = df_logistica.sort_values('Prioridad_L')
 
     pdf = PDFLogistica(fecha_tit)
-    pdf.add_page()
 
-    # 🔹 Solo la primera página tiene header
-    pdf.mostrar_header = False
+    # 🔥 ORDEN CORRECTO (CLAVE)
+    pdf.mostrar_header = True
+    pdf.add_page()  # Primera página con header
+    pdf.mostrar_header = False  # Las siguientes SIN header
 
-    # 🔹 Configuración fija
+    # Configuración fija
     h_celda = 7
     f_size_datos = 9
 
-    # 🔹 Márgenes
+    # Márgenes
     MARGEN_INFERIOR = 10
     LIMITE_Y = 297 - MARGEN_INFERIOR
 
-    # 🔹 Anchos
+    # Anchos
     w_num, w_pedido, w_mod, w_banda, w_dir = 10, 32, 25, 33, 90
 
     for banda in df_logistica['BANDA HORARIA'].unique():
         df_banda = df_logistica[df_logistica['BANDA HORARIA'] == banda].reset_index(drop=True)
 
-        # 🔹 Control de espacio antes del bloque
+        # Control antes del bloque
         if pdf.get_y() + (h_celda * 2) > LIMITE_Y:
             pdf.add_page()
             dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_banda, w_dir)
 
-        # 🔹 Zócalo azul SOLO al iniciar banda
+        # Zócalo azul SOLO inicio de banda
         pdf.set_fill_color(0, 70, 145)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', f_size_datos + 2)
         pdf.cell(0, h_celda + 1, f"--- Domicilio | {banda} ---", 1, 1, 'C', True)
 
-        # 🔹 Encabezado
+        # Encabezado gris
         dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_banda, w_dir)
 
-        # 🔹 Filas
+        # Filas
         for i, row in df_banda.iterrows():
 
-            # 🔴 Corte de página
+            # 🔴 CORTE DE PÁGINA LIMPIO
             if pdf.get_y() + h_celda > LIMITE_Y:
                 pdf.add_page()
 
-                # SOLO encabezado gris (sin zócalo ni header)
+                # SOLO encabezado gris
                 dibujar_encabezado(pdf, h_celda, f_size_datos, w_num, w_pedido, w_mod, w_banda, w_dir)
 
             fill = (i % 2 == 1)
