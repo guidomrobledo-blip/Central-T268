@@ -123,8 +123,8 @@ def generar_pdf_domicilios(df, fecha_tit):
             x_actual = pdf.get_x()
             y_actual = pdf.get_y()
             pdf.cell(w_dir, h_celda, '', 1, 0, 'L', fill)  # dibuja el borde
-            pdf.set_xy(x_actual + 2, y_actual)  # ← sangría de 2mm
-            pdf.cell(w_dir - 2, h_celda, dir_texto, 0, 1, 'L')  # texto sin borde
+            pdf.set_xy(x_actual + 3, y_actual)  # ← sangría de 2mm
+            pdf.cell(w_dir - 3, h_celda, dir_texto, 0, 1, 'L')  # texto sin borde
 
         pdf.ln(2)
 
