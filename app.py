@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import logic_clientes, logic_faltantes, logic_domicilios, logic_informe
+import logic_seguridad
 import os
 import json
 import hashlib
