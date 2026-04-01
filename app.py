@@ -786,7 +786,7 @@ b1, b2, b3, b4, b5, b6 = st.columns(6)
 with b1: 
     btn_1 = st.button("CLIENTES", key="top_1", use_container_width=True)
 with b2:  
-    btn_seguridad = st.button("SEGURIDAD", key="top_seguridad", use_container_width=True)
+    btn_seguridad = st.button("PERSONAL SEGURIDAD", key="top_seguridad", use_container_width=True)
 with b3:  
     btn_2 = st.button("FALTANTES", key="top_2", use_container_width=True)
 with b4:  
