@@ -31,11 +31,11 @@ class PlanillaPDFSeguridad(FPDF):
         cols = [
             "Nro PEDIDO", "MODALIDAD", "BANDA",
             "NOMBRE", "APELLIDO", "DIRECCIÓN",
-            "PICKER", "#"
+            "PICKER", "Art."
         ]
 
-        # Anchos ajustados (manteniendo ancho total)
-        widths = [28, 20, 18, 22, 22, 47, 30, 10]
+        # 🔧 Nuevos anchos ajustados
+        widths = [28, 20, 20, 22, 22, 44, 28, 12]
 
         for i, col in enumerate(cols):
             self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
@@ -50,7 +50,8 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf = PlanillaPDFSeguridad(fecha_tit)
         pdf.add_page()
 
-        widths = [28, 20, 18, 22, 22, 47, 30, 10]
+        # 🔧 mismos anchos que header
+        widths = [28, 20, 20, 22, 22, 44, 28, 12]
 
         ultima_llave = None
         ultima_modalidad = None
@@ -117,12 +118,12 @@ def generar_pdf_seguridad(df, fecha_tit):
 
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
             pdf.cell(widths[1], row_height, str(modalidad)[:10], border=1)
-            pdf.cell(widths[2], row_height, str(banda)[:12], border=1)
+            pdf.cell(widths[2], row_height, str(banda)[:15], border=1)  # leve aumento visible
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
             pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
-            pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
+            pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:30], border=1)
 
-            # Columnas nuevas (vacías para escritura manual)
+            # Columnas nuevas
             pdf.cell(widths[6], row_height, "", border=1)
             pdf.cell(widths[7], row_height, "", border=1)
 
@@ -151,6 +152,19 @@ def generar_pdf_seguridad(df, fecha_tit):
 
         pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
+
+        # ✍️ Bloque de firma
+        pdf.ln(8)
+        pdf.set_x(110)
+
+        pdf.set_font("Times", '', font_size)
+        pdf.cell(0, 6, "Responsable de control:", ln=True)
+
+        pdf.set_x(110)
+        pdf.cell(0, 6, "Firma: __________________________", ln=True)
+
+        pdf.set_x(110)
+        pdf.cell(0, 6, "Nombre: _________________________", ln=True)
 
         if pdf.page_no() <= 2:
             break
