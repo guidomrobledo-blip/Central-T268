@@ -838,7 +838,7 @@ with col_izq:
             st.download_button("DESCARGAR PDF CLIENTES", bytes(pdf), f"Clientes_{fecha_tit}.pdf", use_container_width=True)
         if btn_seguridad:
             with st.spinner("Procesando archivo..."):
-                pdf = logic_seguridad.generar_pdf_clientes(df_clean, fecha_tit)
+                pdf = logic_seguridad.generar_pdf_seguridad(df_clean, fecha_tit)
             st.download_button(
                 "DESCARGAR PDF SEGURIDAD",
                 bytes(pdf),
