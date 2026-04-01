@@ -154,17 +154,21 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
 
         # ✍️ Bloque de firma
-        pdf.ln(8)
-        pdf.set_x(110)
-
-        pdf.set_font("Times", '', font_size)
-        pdf.cell(0, 6, "Responsable de control:", ln=True)
-
-        pdf.set_x(110)
-        pdf.cell(0, 6, "Firma: __________________________", ln=True)
-
-        pdf.set_x(110)
-        pdf.cell(0, 6, "Nombre: _________________________", ln=True)
+        # Posicionar a la misma altura que el resumen (lado izquierdo)
+        y_firma = pdf.get_y() - 35  # ajustá fino si hace falta (-30 / -40)
+        
+        pdf.set_xy(10, y_firma)  # margen izquierdo
+        
+        # Fuente más grande
+        pdf.set_font("Arial", "", 11)
+        
+        pdf.cell(0, 6, "Responsable de control:", 0, 1)
+        
+        pdf.set_x(10)
+        pdf.cell(0, 6, "Firma: __________________________", 0, 1)
+        
+        pdf.set_x(10)
+        pdf.cell(0, 6, "Nombre: _________________________", 0, 1)
 
         if pdf.page_no() <= 2:
             break
