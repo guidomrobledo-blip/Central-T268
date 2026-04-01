@@ -20,7 +20,7 @@ class PlanillaPDFSeguridad(FPDF):
         self.set_xy(100, 10)
         self.multi_cell(
             100, 5,
-            f"Planilla CONTROL SEGURIDAD\nEntrega del día: {self.fecha_tit}\nTienda: [268]",
+            f"Auditoría de Seguridad: Pedidos Online\nEntrega del día: {self.fecha_tit}\nTienda: [268]",
             align='R'
         )
 
