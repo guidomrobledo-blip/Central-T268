@@ -5,9 +5,7 @@ from fpdf import FPDF
 import os
 
 def motor_limpieza(df):
-    """Limpia y prepara los datos básicos."""
     df.columns = [str(c).strip() for c in df.columns]
-    
     fecha_raw = df['FECHA ENTREGA'].iloc[0] if 'FECHA ENTREGA' in df.columns else "S/D"
     try:
         f_dt = pd.to_datetime(fecha_raw)
@@ -16,8 +14,7 @@ def motor_limpieza(df):
         fecha_tit_str = str(fecha_raw)
 
     def procesar_apellido_ajustado(texto):
-        if pd.isna(texto) or str(texto).strip() == "":
-            return ""
+        if pd.isna(texto) or str(texto).strip() == "": return ""
         partes = str(texto).split()
         excepciones = ['DA', 'DE', 'DI', 'DO', 'DU', 'LA', 'DEL', 'DAS', 'DOS']
         resultado, i = [], 0
@@ -27,24 +24,58 @@ def motor_limpieza(df):
                 resultado.append(f"{partes[i].title()} {partes[i+1].title()}")
                 i += 2
             else:
-                resultado.append(partes[i].title())
-                i += 1
+                resultado.append(partes[i].title()); i += 1
         return " ".join(resultado)
 
     def formatear_direccion_pro(row):
         calle = str(row.get('CALLE', '')).strip().title()
-        dicc = {"Avenida": "Av.", "Boulevard": "Bv.", "Cortada": "Cda.", "Pasaje": "Pje."}
-        for k, v in dicc.items():
-            calle = calle.replace(k, v)
+        dicc = {
+            "Avenida": "Av.", "Boulevard": "Bv.", "Cortada": "Cda.",
+            "Diagonal": "Diag.", "Pasaje": "Pje.", "Entre Rios": "E. Ríos",
+            "Sargento": "Sgto.", "General": "Gral.", "Doctor": "Dr.",
+            "Presidente": "Pres.", "Republica": "Rep.", "Batalla": "Bat.",
+            "Manuel Belgrano": "M. Belgrano", "Carlos Pellegrini": "C. Pellegrini",
+            "Jorge Newbery": "J. Newbery", "Juan Jose Paso": "J.J. Paso",
+            "Juan Manuel De Rosas": "J.M. de Rosas", "Martin Rodriguez": "M. Rodriguez",
+            "Ovidio": "Ov."
+        }
+        for k, v in dicc.items(): calle = calle.replace(k, v)
+        calle = re.sub(r'Pellegrini|Pelegrini', 'Pellegrini', calle, flags=re.IGNORECASE)
         nro = str(row.get('NUMERO', '')).strip()
         nro_str = f" {nro}" if nro.lower() != 'nan' and nro != '' else ""
-        return f"{calle}{nro_str}".strip()
+        depto_raw = str(row.get('DEPTO', '')).upper().strip()
+        excluir = ["DR", "NAN", "@ SC @ NRO @ DPTO", "@ SC", "@ NRO", "@ DPTO"]
+        corchete = ""
+        if depto_raw and not any(x == depto_raw for x in excluir):
+            if any(pb in depto_raw for pb in ["PLANTA BAJA", "P.B", "P/B", "PB"]): corchete = " [P/B]"
+            elif any(pa in depto_raw for pa in ["PLANTA ALTA", "P.ALTA", "P.A", "PLANTA.A", "PA"]): corchete = " [P/A]"
+            else:
+                piso_match = re.search(r'(?:PISO|P|PSO|P\.)\s*(\d+)', depto_raw)
+                dpto_match = re.search(r'(?:DEPTO|DEPARTAMENTO|DPTO|DPT|D\.|D)\s*([A-Z0-9]+)', depto_raw)
+                piso, dpto = (piso_match.group(1) if piso_match else ""), (dpto_match.group(1) if dpto_match else "")
+                if not piso and not dpto:
+                    partes = re.findall(r'([A-Z0-9]+)', depto_raw)
+                    if len(partes) >= 2: piso, dpto = partes[0], partes[1]
+                    elif len(partes) == 1: dpto = partes[0]
+                if piso and dpto: corchete = f" [{piso} - {dpto}]" if piso != dpto else f" [{piso}]"
+                elif piso: corchete = f" [{piso}]"
+                elif dpto: corchete = f" [{dpto}]"
+        return f"{calle}{nro_str}{corchete}".strip()
 
+    df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
     df['NOMBRE'] = df['NOMBRE CLIENTE'].apply(lambda n: str(n).split()[0].title() if pd.notna(n) else "")
     df['APELLIDO'] = df['APELLIDO CLIENTE'].apply(procesar_apellido_ajustado)
-    df['DIRECCIÓN'] = df.apply(formatear_direccion_pro, axis=1)
-    
-    return df, fecha_tit_str
+
+    mapping = {
+        "Domicilio | 10:00 a 14:00": 1, "Domicilio | 14:00 a 18:00": 2,
+        "Drive | 09:00 a 13:00": 3, "Sucursal | 09:00 a 13:00": 4,
+        "Drive | 13:00 a 18:00": 5, "Sucursal | 13:00 a 18:00": 6,
+        "Drive | 18:00 a 21:00": 7, "Sucursal | 18:00 a 21:00": 8
+    }
+
+    df['Prioridad'] = df.apply(lambda r: mapping.get(f"{r['MODALIDAD DE ENTREGA']} | {r['BANDA HORARIA']}", 99), axis=1)
+
+    return df.sort_values('Prioridad'), fecha_tit_str
 
 
 class PlanillaPDF(FPDF):
@@ -60,14 +91,9 @@ class PlanillaPDF(FPDF):
 
         self.set_font("Times", 'B', 11)
         self.set_xy(100, 10)
-        self.multi_cell(
-            100, 5,
-            f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]",
-            align='R'
-        )
+        self.multi_cell(100, 5, f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]", align='R')
 
         self.ln(6)
-
         self.set_fill_color(240, 240, 240)
         self.set_font("Times", 'B', 9)
 
@@ -80,122 +106,113 @@ class PlanillaPDF(FPDF):
 
 
 def generar_pdf_clientes(df, fecha_tit):
-
-    def crear_llave_visual(row):
-        mod = str(row.get('MODALIDAD DE ENTREGA', ''))
-        banda = str(row.get('BANDA HORARIA', ''))
-
-        if "Drive" in mod or "Sucursal" in mod:
-            return f"Drive/Sucursal | {banda}", 1
-        return f"Domicilio | {banda}", 0
-
-    df['LLAVE_ZOCALO'], df['TIPO_ORDEN'] = zip(*df.apply(crear_llave_visual, axis=1))
-
-    def obtener_hora_orden(banda):
-        match = re.search(r'(\d{2}):(\d{2})', str(banda))
-        if match:
-            return int(match.group(1)) * 60 + int(match.group(2))
-        return 9999
-
-    df['HORA_ORDEN'] = df['BANDA HORARIA'].apply(obtener_hora_orden)
-
-    df = df.sort_values(
-        by=['TIPO_ORDEN', 'HORA_ORDEN'],
-        ascending=[True, True]
-    )
-
     font_size, row_height = 9.5, 5
 
     while font_size > 6.5:
         pdf = PlanillaPDF(fecha_tit)
         pdf.add_page()
-
         widths = [28, 20, 32, 22, 22, 47, 25]
+
         ultima_llave = None
+        ultima_modalidad = None
+        ultima_banda = None
+
         resumen = {}
 
-        for _, row in df.iterrows():
-            llave_actual = row['LLAVE_ZOCALO']
-            mod_real = str(row['MODALIDAD DE ENTREGA'])
-            banda_real = str(row['BANDA HORARIA'])
+        df_render = df.copy()
 
-            resumen[f"{mod_real} | {banda_real}"] = resumen.get(f"{mod_real} | {banda_real}", 0) + 1
+        def orden_banda(banda):
+            orden = {
+                "10:00 a 14:00": 1,
+                "14:00 a 18:00": 2,
+                "09:00 a 13:00": 3,
+                "13:00 a 18:00": 4,
+                "18:00 a 21:00": 5
+            }
+            return orden.get(banda, 99)
 
-            if llave_actual != ultima_llave:
+        df_render['orden_banda'] = df_render['BANDA HORARIA'].apply(orden_banda)
+        df_render['orden_tipo'] = df_render['MODALIDAD DE ENTREGA'].apply(lambda x: 0 if x == "Domicilio" else 1)
+
+        df_render = df_render.sort_values(['orden_banda', 'orden_tipo'])
+
+        def insertar_filas_vacias():
+            for _ in range(3):
+                if (pdf.h - pdf.get_y()) < 20:
+                    pdf.add_page()
+                for w in widths:
+                    pdf.cell(w, row_height, "", border=1)
+                pdf.ln()
+
+        for _, row in df_render.iterrows():
+            modalidad = row['MODALIDAD DE ENTREGA']
+            banda = row['BANDA HORARIA']
+
+            llave = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Sucursal | {banda}"
+            llave_resumen = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Suc | {banda}"
+
+            resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
+
+            if llave != ultima_llave:
+                # 🔥 INSERTAR FILAS AL FINAL DEL GRUPO ANTERIOR
+                if (
+                    ultima_modalidad == "Domicilio" and
+                    ultima_banda in ["10:00 a 14:00", "14:00 a 18:00"]
+                ):
+                    insertar_filas_vacias()
+
                 pdf.set_fill_color(64, 64, 64)
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
 
                 pdf.cell(sum(widths), row_height + 1.5,
-                         f"--- {llave_actual} ---",
-                         border=1, ln=True, align='C', fill=True)
+                         f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
 
                 pdf.set_text_color(0, 0, 0)
                 pdf.set_font("Times", '', font_size)
-                ultima_llave = llave_actual
+
+                ultima_llave = llave
+                ultima_modalidad = modalidad
+                ultima_banda = banda
 
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
-            pdf.cell(widths[1], row_height, mod_real[:10], border=1)
-            pdf.cell(widths[2], row_height, banda_real[:18], border=1)
+            pdf.cell(widths[1], row_height, str(modalidad)[:10], border=1)
+            pdf.cell(widths[2], row_height, str(banda)[:18], border=1)
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
             pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
             pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:31], border=1)
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
-        # ===== INFORME FINAL (Ajustado) =====
+        # 🔥 ÚLTIMO GRUPO
+        if (
+            ultima_modalidad == "Domicilio" and
+            ultima_banda in ["10:00 a 14:00", "14:00 a 18:00"]
+        ):
+            insertar_filas_vacias()
 
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
 
-        pdf.ln(5)
+        pdf.ln(4)
 
-        # Ajuste para Zona Horaria Argentina (UTC-3)
-        hora_ar = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
+        hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
 
-        pdf.set_font("Times", 'B', font_size + 1)
-        pdf.cell(
-            0,
-            6,
-            f"Resumen de Pedidos hasta el momento [{hora_ar} hs]",
-            ln=True,
-            align='R'
-        )
+        pdf.set_font("Times", 'B', font_size + 1.5)
+        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg} hs]", ln=True, align='R')
 
-        resumen_procesado = {}
+        pdf.set_font("Times", '', font_size + 0.5)
 
-        for k, v in resumen.items():
-            try:
-                modalidad, banda = k.split(" | ")
-            except:
-                continue
+        for b, t in resumen.items():
+            pdf.cell(0, 4.5, f"{b}: [{t}]", ln=True, align='R')
 
-            if "domicilio" in modalidad.lower():
-                mod_final = "Domicilios"
-                tipo = 0
-            else:
-                mod_final = "Drive/Suc"
-                tipo = 1
-
-            match = re.search(r'(\d{2}):(\d{2})', banda)
-            hora_orden = int(match.group(1)) * 60 + int(match.group(2)) if match else 9999
-
-            resumen_procesado[(tipo, hora_orden, mod_final, banda)] = v
-
-        resumen_ordenado = sorted(resumen_procesado.items(), key=lambda x: (x[0][0], x[0][1]))
-
-        pdf.set_font("Times", '', font_size)
-
-        for (_, _, mod_final, banda), cantidad in resumen_ordenado:
-            # Se agrega ":" después de la banda horaria para coincidir con el diseño
-            pdf.cell(0, 4.5, f"{mod_final} | {banda}: [{cantidad}]", ln=True, align='R')
-
-        pdf.set_font("Times", 'B', font_size + 1)
+        pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
 
-        if pdf.page_no() <= 15:
+        if pdf.page_no() <= 2:
             break
 
         font_size -= 0.5
+        row_height -= 0.3
 
-    return pdf.output()
+    return bytes(pdf.output())
