@@ -160,7 +160,7 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf.set_xy(10, y_firma)  # margen izquierdo
         
         # Fuente más grande
-        pdf.set_font("Arial", "", 8)
+        pdf.set_font("Arial", "", 10)
         
         pdf.cell(0, 8, "Responsable del control:", 0, 1)
         
