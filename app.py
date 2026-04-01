@@ -782,18 +782,20 @@ st.markdown(f"""
 
 # --- BUTTON ROW ---
 st.write("")
-b1, b2, b3, b4, b5 = st.columns(5)
+b1, b2, b3, b4, b5, b6 = st.columns(6)
 with b1: 
     btn_1 = st.button("CLIENTES", key="top_1", use_container_width=True)
-with b2: 
+with b2:  
+    btn_seguridad = st.button("SEGURIDAD", key="top_seguridad", use_container_width=True)
+with b3:  
     btn_2 = st.button("FALTANTES", key="top_2", use_container_width=True)
-with b3: 
+with b4:  
     btn_3 = st.button("DOMICILIOS", key="top_3", use_container_width=True)
-with b4: 
+with b5:  
     btn_4 = st.button("INFORME", key="top_4", use_container_width=True)
-with b5: 
+with b6:  
     st.link_button("PLANILLA MEC", "https://docs.google.com/spreadsheets/d/1v0Rls8fg_uIGfhA1t3CzINq3VfAUvPY3DY8_m_ZSmM8/edit#gid=0", use_container_width=True)
-
+   
 # --- MAIN BODY ---
 st.write("")
 col_izq, col_der = st.columns([1, 1], gap="large")
