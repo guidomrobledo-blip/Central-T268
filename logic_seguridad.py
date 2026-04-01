@@ -165,10 +165,10 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf.cell(0, 6, "Responsable de control:", 0, 1)
         
         pdf.set_x(10)
-        pdf.cell(0, 6, "Firma: __________________________", 0, 1)
+        pdf.cell(0, 8, "Firma: __________________________", 0, 1)
         
         pdf.set_x(10)
-        pdf.cell(0, 6, "Nombre: _________________________", 0, 1)
+        pdf.cell(0, 8, "Nombre: _________________________", 0, 1)
 
         if pdf.page_no() <= 2:
             break
