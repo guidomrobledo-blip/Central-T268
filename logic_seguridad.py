@@ -31,11 +31,11 @@ class PlanillaPDFSeguridad(FPDF):
         cols = [
             "Nro PEDIDO", "MODALIDAD", "BANDA",
             "NOMBRE", "APELLIDO", "DIRECCIÓN",
-            "PICKER", "Art."
+            "PICKEADOR", "Art."
         ]
 
         # 🔧 Nuevos anchos ajustados
-        widths = [28, 20, 20, 22, 22, 44, 28, 12]
+        widths = [27, 20, 21, 22, 22, 44, 28, 12]
 
         for i, col in enumerate(cols):
             self.cell(widths[i], 7.5, col, border=1, fill=True, align='C')
@@ -51,7 +51,7 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf.add_page()
 
         # 🔧 mismos anchos que header
-        widths = [28, 20, 20, 22, 22, 44, 28, 12]
+        widths = [27, 20, 21, 22, 22, 44, 28, 12]
 
         ultima_llave = None
         ultima_modalidad = None
@@ -154,8 +154,8 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
 
         # ✍️ Bloque de firma
-        # Posicionar a la misma altura que el resumen (lado izquierdo)
-        y_firma = pdf.get_y() - 35  # ajustá fino si hace falta (-30 / -40)
+        # Posicionar a la misma altura que el resumen 
+        y_firma = pdf.get_y() - 35  
         
         pdf.set_xy(8, y_firma)  # margen izquierdo
         
