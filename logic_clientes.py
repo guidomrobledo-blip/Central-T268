@@ -86,14 +86,18 @@ class PlanillaPDF(FPDF):
         self.set_auto_page_break(auto=True, margin=8)
 
     def header(self):
-        if os.path.exists('carrefour+logo.png'):
-            self.image('carrefour+logo.png', x=7, y=8, w=55)
+        # 👉 SOLO primera página
+        if self.page_no() == 1:
+            if os.path.exists('carrefour+logo.png'):
+                self.image('carrefour+logo.png', x=7, y=8, w=55)
 
-        self.set_font("Times", 'B', 11)
-        self.set_xy(100, 10)
-        self.multi_cell(100, 5, f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]", align='R')
+            self.set_font("Times", 'B', 11)
+            self.set_xy(100, 10)
+            self.multi_cell(100, 5, f"Planilla operativa de Pedidos\nEntrega del día: {self.fecha_tit}\nTienda: [268]", align='R')
 
-        self.ln(6)
+            self.ln(6)
+
+        # 👉 SIEMPRE tabla
         self.set_fill_color(240, 240, 240)
         self.set_font("Times", 'B', 9)
 
@@ -154,7 +158,6 @@ def generar_pdf_clientes(df, fecha_tit):
             resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
 
             if llave != ultima_llave:
-                # 🔥 INSERTAR FILAS AL FINAL DEL GRUPO ANTERIOR
                 if (
                     ultima_modalidad == "Domicilio" and
                     ultima_banda in ["10:00 a 14:00", "14:00 a 18:00"]
@@ -184,7 +187,6 @@ def generar_pdf_clientes(df, fecha_tit):
             pdf.cell(widths[6], row_height, str(row['TEL. PARTICULAR'])[:13], border=1)
             pdf.ln()
 
-        # 🔥 ÚLTIMO GRUPO
         if (
             ultima_modalidad == "Domicilio" and
             ultima_banda in ["10:00 a 14:00", "14:00 a 18:00"]
