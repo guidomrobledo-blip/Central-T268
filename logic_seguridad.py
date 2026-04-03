@@ -27,21 +27,26 @@ class PlanillaPDFSeguridad(FPDF):
         self.set_auto_page_break(auto=True, margin=8)
 
     def header(self):
-        if os.path.exists('carrefour+logo.png'):
-            self.image('carrefour+logo.png', x=7, y=8, w=55)
-        if os.path.exists('checklist_seguridad.png'):
-            self.set_xy(85, 4) 
-            self.image('checklist_seguridad.png', w=26)   
+        # 👉 SOLO en la primera página
+        if self.page_no() == 1:
+            if os.path.exists('carrefour+logo.png'):
+                self.image('carrefour+logo.png', x=7, y=8, w=55)
 
-        self.set_font("Times", 'B', 11)
-        self.set_xy(100, 10)
-        self.multi_cell(
-            100, 5,
-            f"Auditoría de Seguridad: Pedidos Online\nEntrega del día: {self.fecha_tit}\nTienda: [268]",
-            align='R'
-        )
+            if os.path.exists('checklist_seguridad.png'):
+                self.set_xy(85, 4) 
+                self.image('checklist_seguridad.png', w=26)   
 
-        self.ln(6)
+            self.set_font("Times", 'B', 11)
+            self.set_xy(100, 10)
+            self.multi_cell(
+                100, 5,
+                f"Auditoría de Seguridad: Pedidos Online\nEntrega del día: {self.fecha_tit}\nTienda: [268]",
+                align='R'
+            )
+
+            self.ln(6)
+
+        # 👉 SIEMPRE encabezado de tabla
         self.set_fill_color(240, 240, 240)
         self.set_font("Times", 'B', 9)
 
