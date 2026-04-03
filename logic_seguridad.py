@@ -30,8 +30,8 @@ class PlanillaPDFSeguridad(FPDF):
         if os.path.exists('carrefour+logo.png'):
             self.image('carrefour+logo.png', x=7, y=8, w=55)
         if os.path.exists('checklist_seguridad.png'):
-            self.set_xy(85, 4)  # 🔧 control real de posición
-            self.image('checklist_seguridad.png', w=28)   
+            self.set_xy(85, 4) 
+            self.image('checklist_seguridad.png', w=26)   
 
         self.set_font("Times", 'B', 11)
         self.set_xy(100, 10)
