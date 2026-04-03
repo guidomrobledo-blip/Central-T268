@@ -144,6 +144,7 @@ def generar_pdf_clientes(df, fecha_tit):
             for _ in range(3):
                 if (pdf.h - pdf.get_y()) < 20:
                     pdf.add_page()
+                    pdf.header() 
                 for w in widths:
                     pdf.cell(w, row_height, "", border=1)
                 pdf.ln()
@@ -195,6 +196,7 @@ def generar_pdf_clientes(df, fecha_tit):
 
         if (pdf.h - pdf.get_y()) < 35:
             pdf.add_page()
+            pdf.header() 
 
         pdf.ln(4)
 
