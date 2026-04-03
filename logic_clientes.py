@@ -150,6 +150,9 @@ def generar_pdf_clientes(df, fecha_tit):
                 pdf.ln()
 
         for _, row in df_render.iterrows():
+             # 🔧 CONTROL DE SALTO PREVENTIVO (ANTES DE TODO)
+            if (pdf.h - pdf.get_y()) < (row_height + 3):
+            pdf.add_page()
             modalidad = row['MODALIDAD DE ENTREGA']
             banda = row['BANDA HORARIA']
 
