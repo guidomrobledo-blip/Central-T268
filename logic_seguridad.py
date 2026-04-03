@@ -8,7 +8,21 @@ from logic_clientes import motor_limpieza  # reutilizamos limpieza
 class PlanillaPDFSeguridad(FPDF):
     def __init__(self, fecha_tit):
         super().__init__(orientation='P', unit='mm', format='A4')
-        self.fecha_tit = fecha_tit
+        
+        # 🔧 Normalizar fecha a formato dd/mm/aa
+        if isinstance(fecha_tit, datetime):
+            self.fecha_tit = fecha_tit.strftime("%d/%m/%y")
+        else:
+            try:
+                fecha_obj = datetime.strptime(fecha_tit, "%m/%d/%Y")
+                self.fecha_tit = fecha_obj.strftime("%d/%m/%y")
+            except:
+                try:
+                    fecha_obj = datetime.strptime(fecha_tit, "%m/%d/%y")
+                    self.fecha_tit = fecha_obj.strftime("%d/%m/%y")
+                except:
+                    self.fecha_tit = fecha_tit
+
         self.set_margins(left=7, top=10, right=7)
         self.set_auto_page_break(auto=True, margin=8)
 
@@ -118,12 +132,11 @@ def generar_pdf_seguridad(df, fecha_tit):
 
             pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
             pdf.cell(widths[1], row_height, str(modalidad)[:10], border=1)
-            pdf.cell(widths[2], row_height, str(banda)[:15], border=1)  # leve aumento visible
+            pdf.cell(widths[2], row_height, str(banda)[:15], border=1)
             pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
             pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
             pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:30], border=1)
 
-            # Columnas nuevas
             pdf.cell(widths[6], row_height, "", border=1)
             pdf.cell(widths[7], row_height, "", border=1)
 
@@ -153,13 +166,10 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf.set_font("Times", 'B', font_size + 2)
         pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
 
-        # ✍️ Bloque de firma
-        # Posicionar a la misma altura que el resumen 
         y_firma = pdf.get_y() - 35  
         
-        pdf.set_xy(8, y_firma)  # margen izquierdo
+        pdf.set_xy(8, y_firma)
         
-        # Fuente más grande
         pdf.set_font("Arial", "", 10)
         
         pdf.cell(0, 8, "Responsable del control:", 0, 1)
