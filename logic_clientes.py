@@ -86,7 +86,6 @@ class PlanillaPDF(FPDF):
         self.set_auto_page_break(auto=True, margin=8)
 
     def header(self):
-        # 👉 SOLO primera página
         if self.page_no() == 1:
             if os.path.exists('carrefour+logo.png'):
                 self.image('carrefour+logo.png', x=7, y=8, w=55)
@@ -97,7 +96,6 @@ class PlanillaPDF(FPDF):
 
             self.ln(6)
 
-        # 👉 SIEMPRE tabla
         self.set_fill_color(240, 240, 240)
         self.set_font("Times", 'B', 9)
 
@@ -149,17 +147,14 @@ def generar_pdf_clientes(df, fecha_tit):
                 pdf.ln()
 
         for _, row in df_render.iterrows():
-             # 🔧 CONTROL DE SALTO PREVENTIVO (ANTES DE TODO)
-            if (pdf.h - pdf.get_y()) < (row_height + 3):
-                pdf.add_page()
+
             modalidad = row['MODALIDAD DE ENTREGA']
             banda = row['BANDA HORARIA']
 
             llave = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Sucursal | {banda}"
             llave_resumen = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Suc | {banda}"
 
-            resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
-
+            # 👉 INSERTAR VACÍOS ANTES DEL SALTO
             if llave != ultima_llave:
                 if (
                     ultima_modalidad == "Domicilio" and
@@ -167,6 +162,13 @@ def generar_pdf_clientes(df, fecha_tit):
                 ):
                     insertar_filas_vacias()
 
+            # 👉 CONTROL DE SALTO DESPUÉS
+            if (pdf.h - pdf.get_y()) < (row_height + 3):
+                pdf.add_page()
+
+            resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
+
+            if llave != ultima_llave:
                 pdf.set_fill_color(64, 64, 64)
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_font("Times", 'B', font_size + 2)
