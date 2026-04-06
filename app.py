@@ -91,26 +91,26 @@ def extraer_fecha_entrega(df):
         if "FECHA" in str(col).upper() and "ENTREGA" in str(col).upper():
             col_fecha = col
             break
-    
+
     if col_fecha is None:
         return None
-    
+
     try:
-        # Obtener el primer valor no nulo de la columna
         fecha_val = df[col_fecha].dropna().iloc[0]
-        
-        # Si ya es datetime
-        if isinstance(fecha_val, (pd.Timestamp, datetime)):
-            return fecha_val.date() if hasattr(fecha_val, 'date') else fecha_val
-        
-        # Si es string, intentar parsear con multiples formatos
-        fecha_str = str(fecha_val)
-        for fmt in ["%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%d-%m-%y", "%d-%b-%y", "%d/%m/%Y"]:
-            try:
-                return datetime.strptime(fecha_str, fmt).date()
-            except ValueError:
-                continue
-        return None
+        fecha_str = str(fecha_val).strip()
+
+        # 🔥 FORZAR interpretación argentina SIEMPRE
+        fecha = pd.to_datetime(
+            fecha_str,
+            dayfirst=True,
+            errors='coerce'
+        )
+
+        if pd.isna(fecha):
+            return None
+
+        return fecha.date()
+
     except Exception:
         return None
 
@@ -819,7 +819,7 @@ with col_izq:
         archivo_cdp.seek(0)  # Resetear el puntero para pd.read_excel
         
         with st.spinner("Procesando archivo..."):
-            df_raw = pd.read_excel(archivo_cdp)
+            df_raw = pd.read_excel(archivo_cdp, dtype=str)
             df_clean, fecha_tit = logic_clientes.motor_limpieza(df_raw)
             
             # Registrar pedidos para el grafico (evita duplicados)
@@ -871,7 +871,7 @@ with col_izq:
     if btn_4:
         if archivo_inf:
             with st.spinner("Procesando archivo..."):
-                df_inf_raw = pd.read_excel(archivo_inf)
+                df_inf_raw = pd.read_excel(archivo_inf, dtype=str)
                 df_inf_clean, fecha_inf_tit = logic_clientes.motor_limpieza(df_inf_raw)
                 pdf_bytes = logic_informe.generar_pdf_informe(df_inf_clean, obs)
             st.download_button("DESCARGAR REPORTE FINAL", pdf_bytes, f"Informe_{fecha_inf_tit}.pdf", use_container_width=True)
