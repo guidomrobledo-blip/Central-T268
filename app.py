@@ -171,6 +171,7 @@ def registrar_pedidos_cdp(archivo_bytes, df):
     
     # Extraer la fecha de entrega del Excel
     fecha_entrega = extraer_fecha_entrega(df)
+    st.write("DEBUG FECHA:", fecha_entrega)
     if fecha_entrega is None:
         return datos, False
     
