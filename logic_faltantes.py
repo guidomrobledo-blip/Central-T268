@@ -75,7 +75,7 @@ def generar_pdf_faltantes(df, fecha_tit):
     pdf.ln(5)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Times", 'B', 12)
-    nota = ("AVISO IMPORTANTE: Los pedidos resaltados en gris deben ser verificados en el CDP. "
+    nota = ("AVISO IMPORTANTE: Los pedidos resaltados en negrita deben ser verificados en el CDP. "
             "Confirme si presentan faltantes reales o si están siendo pickeados actualmente por un colaborador.")
     pdf.multi_cell(sum(widths), 5, nota, border=0, align='L')
 
