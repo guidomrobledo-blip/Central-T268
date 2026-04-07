@@ -9,25 +9,13 @@ class PlanillaPDFSeguridad(FPDF):
     def __init__(self, fecha_tit):
         super().__init__(orientation='P', unit='mm', format='A4')
         
-        # 🔧 Normalizar fecha a formato dd/mm/aa
-        if isinstance(fecha_tit, datetime):
-            self.fecha_tit = fecha_tit.strftime("%d/%m/%y")
-        else:
-            try:
-                fecha_obj = datetime.strptime(fecha_tit, "%m/%d/%Y")
-                self.fecha_tit = fecha_obj.strftime("%d/%m/%y")
-            except:
-                try:
-                    fecha_obj = datetime.strptime(fecha_tit, "%m/%d/%y")
-                    self.fecha_tit = fecha_obj.strftime("%d/%m/%y")
-                except:
-                    self.fecha_tit = fecha_tit
+        # ✅ USAR LA FECHA TAL COMO VIENE (ya está bien formateada)
+        self.fecha_tit = fecha_tit
 
         self.set_margins(left=7, top=10, right=7)
         self.set_auto_page_break(auto=True, margin=8)
 
     def header(self):
-        # 👉 SOLO en la primera página
         if self.page_no() == 1:
             if os.path.exists('carrefour+logo.png'):
                 self.image('carrefour+logo.png', x=7, y=8, w=55)
@@ -46,7 +34,6 @@ class PlanillaPDFSeguridad(FPDF):
 
             self.ln(6)
 
-        # 👉 SIEMPRE encabezado de tabla
         self.set_fill_color(240, 240, 240)
         self.set_font("Times", 'B', 9)
 
@@ -56,7 +43,6 @@ class PlanillaPDFSeguridad(FPDF):
             "PICKEADOR", "Art."
         ]
 
-        # 🔧 Nuevos anchos ajustados
         widths = [27, 20, 21, 22, 22, 44, 28, 12]
 
         for i, col in enumerate(cols):
@@ -72,7 +58,6 @@ def generar_pdf_seguridad(df, fecha_tit):
         pdf = PlanillaPDFSeguridad(fecha_tit)
         pdf.add_page()
 
-        # 🔧 mismos anchos que header
         widths = [27, 20, 21, 22, 22, 44, 28, 12]
 
         ultima_llave = None
