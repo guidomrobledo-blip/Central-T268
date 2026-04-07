@@ -835,6 +835,7 @@ with col_izq:
         # PROCESAMIENTO DE BOTONES
         if btn_1:
             with st.spinner("Procesando archivo..."):
+                st.write("DEBUG FINAL FECHA:", fecha_tit)
                 pdf = logic_clientes.generar_pdf_clientes(df_clean, fecha_tit)
             st.download_button("DESCARGAR PDF CLIENTES", bytes(pdf), f"Clientes_{fecha_tit}.pdf", use_container_width=True)
         if btn_seguridad:
