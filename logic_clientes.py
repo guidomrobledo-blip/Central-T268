@@ -107,7 +107,13 @@ class PlanillaPDF(FPDF):
         self.ln()
 
 
-def generar_pdf_clientes(df, fecha_tit):
+def generar_pdf_clientes(df):
+    try:
+        val_fecha = df['FECHA ENTREGA'].iloc[0]
+        fecha_tit = val_fecha.strftime('%d/%m/%Y') if hasattr(val_fecha, 'strftime') else str(val_fecha)
+    except:
+        fecha_tit = ""
+        
     font_size, row_height = 9.5, 5
 
     while font_size > 6.5:
