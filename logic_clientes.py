@@ -75,6 +75,9 @@ def motor_limpieza(df):
 
     df['Prioridad'] = df.apply(lambda r: mapping.get(f"{r['MODALIDAD DE ENTREGA']} | {r['BANDA HORARIA']}", 99), axis=1)
 
+    # ✅ Guardamos la fecha formateada en attrs
+    df.attrs['fecha_tit_str'] = fecha_tit_str
+
     return df.sort_values('Prioridad'), fecha_tit_str
 
 
@@ -108,12 +111,9 @@ class PlanillaPDF(FPDF):
 
 
 def generar_pdf_clientes(df):
-    try:
-        val_fecha = df['FECHA ENTREGA'].iloc[0]
-        fecha_tit = val_fecha.strftime('%d/%m/%Y') if hasattr(val_fecha, 'strftime') else str(val_fecha)
-    except:
-        fecha_tit = ""
-        
+    # ✅ Usamos la fecha ya formateada
+    fecha_tit = df.attrs.get('fecha_tit_str', '')
+
     font_size, row_height = 9.5, 5
 
     while font_size > 6.5:
@@ -160,7 +160,6 @@ def generar_pdf_clientes(df):
             llave = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Sucursal | {banda}"
             llave_resumen = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Suc | {banda}"
 
-            # 👉 INSERTAR VACÍOS ANTES DEL SALTO
             if llave != ultima_llave:
                 if (
                     ultima_modalidad == "Domicilio" and
@@ -168,7 +167,6 @@ def generar_pdf_clientes(df):
                 ):
                     insertar_filas_vacias()
 
-            # 👉 CONTROL DE SALTO DESPUÉS
             if (pdf.h - pdf.get_y()) < (row_height + 3):
                 pdf.add_page()
 
