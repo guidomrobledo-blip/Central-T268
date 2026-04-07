@@ -820,7 +820,8 @@ with col_izq:
         archivo_cdp.seek(0)  # Resetear el puntero para pd.read_excel
         
         with st.spinner("Procesando archivo..."):
-            df_raw = pd.read_excel(archivo_cdp, dtype=str)
+            df_raw = pd.read_excel(archivo_cdp)
+            df_raw['FECHA ENTREGA'] = pd.to_datetime(df_raw['FECHA ENTREGA'], dayfirst=True, errors='coerce')
             df_clean, fecha_tit = logic_clientes.motor_limpieza(df_raw)
             
             # Registrar pedidos para el grafico (evita duplicados)
