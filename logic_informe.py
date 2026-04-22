@@ -29,18 +29,33 @@ def normalizar_estado(val):
     return v.capitalize()
 
 def obtener_orden(row):
-    mod, banda, est = str(row['MODALIDAD']).upper(), str(row['BANDA HORARIA']).upper(), str(row['ESTADO_NORM']).upper()
+    mod = str(row['MODALIDAD']).upper()
+    banda = str(row['BANDA HORARIA']).upper()
+    est = str(row['ESTADO_NORM']).upper()
+
+    # --- DOMICILIO ---
     if "DOMICILIO" in mod:
-        if "10:00 A 14:00" in banda: return 1 if "CONTROLADO" == est else 2 if "FALTANTE" in est else 3 if "PREPARACIÓN" in est else 4
-        if "14:00 A 18:00" in banda: return 5 if "CONTROLADO" == est else 6 if "FALTANTE" in est else 7 if "PREPARACIÓN" in est else 8
+        if "10:00 A 14:00" in banda:
+            return 1 if "CONTROLADO" == est else 2 if "FALTANTE" in est else 3 if "PREPARACIÓN" in est else 4
+        if "14:00 A 18:00" in banda:
+            return 5 if "CONTROLADO" == est else 6 if "FALTANTE" in est else 7 if "PREPARACIÓN" in est else 8
+        if "18:00 A 21:00" in banda:
+            return 9 if "CONTROLADO" == est else 10 if "FALTANTE" in est else 11 if "PREPARACIÓN" in est else 12
+
+    # --- DRIVE / SUCURSAL ---
     base = 0
-    if "09:00 A 13:00" in banda: base = 9
-    elif "13:00 A 18:00" in banda: base = 17
-    elif "18:00 A 21:00" in banda: base = 25
+    if "09:00 A 13:00" in banda:
+        base = 13
+    elif "13:00 A 18:00" in banda:
+        base = 21
+    elif "18:00 A 21:00" in banda:
+        base = 29
+
     if base > 0:
         offset = 0 if "CONTROLADO" == est else 2 if "FALTANTE" in est else 4 if "PREPARACIÓN" in est else 6
         sub_offset = 0 if "DRIVE" in mod else 1
         return base + offset + sub_offset
+
     return 999
 
 def generar_pdf_informe(df, obs_usuario):
@@ -86,7 +101,9 @@ def generar_pdf_informe(df, obs_usuario):
     contador_banda = 0
 
     for i, row in df_inf.iterrows():
-        if pdf.get_y() > 275: pdf.add_page()
+        if pdf.get_y() > 275:
+            pdf.add_page()
+
         if row['BANDA HORARIA'] != banda_actual:
             if i > 0:
                 pdf.cell(w[0], h_zocalo, "", 0, 0)
@@ -94,34 +111,44 @@ def generar_pdf_informe(df, obs_usuario):
                 pdf.cell(sum(w[1:]), h_zocalo, "", 1, 1, 'C', True)
             banda_actual = row['BANDA HORARIA']
             contador_banda = 1
-        else: contador_banda += 1
+        else:
+            contador_banda += 1
 
         pdf.set_font('Arial', '', f_datos)
         pdf.cell(w[0], h_normal, str(contador_banda), 0, 0, 'C')
         pdf.cell(w[1], h_normal, str(row['Nro PEDIDO']).replace(".0",""), 1, 0, 'L')
         pdf.cell(w[2], h_normal, str(row['MODALIDAD']).capitalize(), 1, 0, 'L')
         pdf.cell(w[3], h_normal, str(row['BANDA HORARIA']), 1, 0, 'L')
+
         f_v = row['FECHA'].strftime('%d/%m/%y') if hasattr(row['FECHA'], 'strftime') else str(row['FECHA'])
         pdf.cell(w[4], h_normal, f_v, 1, 0, 'L')
 
         e_u = str(row['ESTADO_NORM']).upper()
-        color = (144, 238, 144) if "CONTROLADO" == e_u else (255, 215, 0) if "FALTANTE" in e_u else (255, 120, 120) if "PREPARACIÓN" in e_u else (255, 255, 255)
+        color = (
+            (144, 238, 144) if "CONTROLADO" == e_u else
+            (255, 215, 0) if "FALTANTE" in e_u else
+            (255, 120, 120) if "PREPARACIÓN" in e_u else
+            (255, 255, 255)
+        )
         pdf.set_fill_color(*color)
         pdf.cell(w[5], h_normal, f" {row['ESTADO_NORM']}", 1, 1, 'L', True)
 
-    # --- SECCIÓN OBSERVACIONES (COLOR ROJO) ---
+    # --- SECCIÓN OBSERVACIONES ---
     pdf.ln(5)
-    pdf.set_draw_color(0, 100, 0); pdf.set_text_color(0, 100, 0); pdf.set_font('Arial', 'B', 11)
+    pdf.set_draw_color(0, 100, 0)
+    pdf.set_text_color(0, 100, 0)
+    pdf.set_font('Arial', 'B', 11)
     pdf.cell(0, 9, f"PEDIDOS TOTALES HASTA EL MOMENTO: {len(df_inf)}", 1, 1, 'C')
 
     if obs_usuario:
         pdf.ln(3)
-        pdf.set_draw_color(200, 0, 0); pdf.set_text_color(200, 0, 0); pdf.set_font('Arial', 'B', 10)
+        pdf.set_draw_color(200, 0, 0)
+        pdf.set_text_color(200, 0, 0)
+        pdf.set_font('Arial', 'B', 10)
         pdf.set_line_width(0.6)
         pdf.cell(0, 7, "OBSERVACIONES:", "LTR", 1, 'L')
-        # --- AJUSTE: Texto ahora es rojo como el recuadro ---
+
         pdf.set_font('Arial', '', 10)
         pdf.multi_cell(0, 5, obs_usuario, "LBR", 'L')
 
     return bytes(pdf.output())
-
