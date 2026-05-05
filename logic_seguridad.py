@@ -51,152 +51,148 @@ class PlanillaPDFSeguridad(FPDF):
 
 def generar_pdf_seguridad(df, fecha_tit):
 
-    font_size, row_height = 9.5, 5
+    # ✅ limpieza unicode
+    def limpiar_texto_pdf(texto):
+        try:
+            return str(texto).encode('latin-1', 'replace').decode('latin-1')
+        except:
+            return str(texto)
 
-    while font_size > 6.5:
-        pdf = PlanillaPDFSeguridad(fecha_tit)
-        pdf.add_page()
+    # ✅ tamaño fijo
+    font_size, row_height = 9, 5.5
 
-        widths = [27, 20, 21, 22, 22, 44, 28, 12]
+    pdf = PlanillaPDFSeguridad(fecha_tit)
+    pdf.add_page()
 
-        ultima_llave = None
-        ultima_modalidad = None
-        ultima_banda = None
+    widths = [27, 20, 21, 22, 22, 44, 28, 12]
 
-        resumen = {}
+    ultima_llave = None
+    ultima_modalidad = None
+    ultima_banda = None
 
-        df_render = df.copy()
+    resumen = {}
 
-        # ✅ ORDEN FINAL (igual que clientes)
-        orden_final = {
-            "Domicilio | 10:00 a 14:00": 1,
-            "Domicilio | 14:00 a 18:00": 2,
-            "Domicilio | 18:00 a 21:00": 3,
-            "Drive/Sucursal | 09:00 a 13:00": 4,
-            "Drive/Sucursal | 13:00 a 18:00": 5,
-            "Drive/Sucursal | 18:00 a 21:00": 6
-        }
+    df_render = df.copy()
 
-        def obtener_llave(row):
-            if row['MODALIDAD DE ENTREGA'] == "Domicilio":
-                return f"Domicilio | {row['BANDA HORARIA']}"
-            else:
-                return f"Drive/Sucursal | {row['BANDA HORARIA']}"
+    orden_final = {
+        "Domicilio | 10:00 a 14:00": 1,
+        "Domicilio | 14:00 a 18:00": 2,
+        "Domicilio | 18:00 a 21:00": 3,
+        "Drive/Sucursal | 09:00 a 13:00": 4,
+        "Drive/Sucursal | 13:00 a 18:00": 5,
+        "Drive/Sucursal | 18:00 a 21:00": 6
+    }
 
-        df_render['orden_final'] = df_render.apply(
-            lambda r: orden_final.get(obtener_llave(r), 99),
-            axis=1
-        )
+    def obtener_llave(row):
+        if row['MODALIDAD DE ENTREGA'] == "Domicilio":
+            return f"Domicilio | {row['BANDA HORARIA']}"
+        else:
+            return f"Drive/Sucursal | {row['BANDA HORARIA']}"
 
-        df_render = df_render.sort_values('orden_final')
+    df_render['orden_final'] = df_render.apply(
+        lambda r: orden_final.get(obtener_llave(r), 99),
+        axis=1
+    )
 
-        # ✅ FUNCIÓN FLEXIBLE
-        def insertar_filas_vacias(cantidad=3):
-            for _ in range(cantidad):
-                if (pdf.h - pdf.get_y()) < 20:
-                    pdf.add_page()
-                for w in widths:
-                    pdf.cell(w, row_height, "", border=1)
-                pdf.ln()
+    df_render = df_render.sort_values('orden_final')
 
-        # ✅ GRUPOS CON ESPACIO
-        grupos_con_espacio = [
-            "Domicilio | 10:00 a 14:00",
-            "Domicilio | 14:00 a 18:00",
-            "Domicilio | 18:00 a 21:00",
-            "Drive/Sucursal | 18:00 a 21:00"
-        ]
-
-        for _, row in df_render.iterrows():
-            modalidad = row['MODALIDAD DE ENTREGA']
-            banda = row['BANDA HORARIA']
-
-            llave = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Sucursal | {banda}"
-            llave_resumen = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Suc | {banda}"
-
-            resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
-
-            if llave != ultima_llave:
-                if ultima_llave in grupos_con_espacio:
-                    insertar_filas_vacias(2)
-
-                pdf.set_fill_color(64, 64, 64)
-                pdf.set_text_color(255, 255, 255)
-                pdf.set_font("Times", 'B', font_size + 2)
-
-                pdf.cell(sum(widths), row_height + 1.5,
-                         f"--- {llave} ---", border=1, ln=True, align='C', fill=True)
-
-                pdf.set_text_color(0, 0, 0)
-                pdf.set_font("Times", '', font_size)
-
-                ultima_llave = llave
-                ultima_modalidad = modalidad
-                ultima_banda = banda
-
-            pdf.cell(widths[0], row_height, str(row['NUMERO PEDIDO']).replace(".0", ""), border=1, align='C')
-            pdf.cell(widths[1], row_height, str(modalidad)[:10], border=1)
-            pdf.cell(widths[2], row_height, str(banda)[:15], border=1)
-            pdf.cell(widths[3], row_height, str(row['NOMBRE'])[:12], border=1)
-            pdf.cell(widths[4], row_height, str(row['APELLIDO'])[:12], border=1)
-            pdf.cell(widths[5], row_height, str(row['DIRECCIÓN'])[:30], border=1)
-
-            pdf.cell(widths[6], row_height, "", border=1)
-            pdf.cell(widths[7], row_height, "", border=1)
-
+    def insertar_filas_vacias(cantidad=3):
+        for _ in range(cantidad):
+            if (pdf.h - pdf.get_y()) < 20:
+                pdf.add_page()
+            for w in widths:
+                pdf.cell(w, row_height, "", border=1)
             pdf.ln()
 
-        # ✅ APLICAR TAMBIÉN AL FINAL
-        if ultima_llave in grupos_con_espacio:
-            insertar_filas_vacias(2)
+    grupos_con_espacio = [
+        "Domicilio | 10:00 a 14:00",
+        "Domicilio | 14:00 a 18:00",
+        "Domicilio | 18:00 a 21:00",
+        "Drive/Sucursal | 18:00 a 21:00"
+    ]
 
-        if (pdf.h - pdf.get_y()) < 35:
-            pdf.add_page()
+    for _, row in df_render.iterrows():
+        modalidad = row['MODALIDAD DE ENTREGA']
+        banda = row['BANDA HORARIA']
 
-        pdf.ln(4)
+        llave = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Sucursal | {banda}"
+        llave_resumen = f"Domicilio | {banda}" if modalidad == "Domicilio" else f"Drive/Suc | {banda}"
 
-        hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
+        resumen[llave_resumen] = resumen.get(llave_resumen, 0) + 1
 
-        pdf.set_font("Times", 'B', font_size + 1.5)
-        pdf.cell(0, 6, f"Informe de pedidos al momento [{hora_arg} hs]", ln=True, align='R')
+        if llave != ultima_llave:
+            if ultima_llave in grupos_con_espacio:
+                insertar_filas_vacias(2)
 
-        pdf.set_font("Times", '', font_size + 0.5)
+            pdf.set_fill_color(64, 64, 64)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font("Times", 'B', font_size + 2)
 
-        # ✅ ORDEN DEL RESUMEN
-        orden_resumen = [
-            "Domicilio | 10:00 a 14:00",
-            "Domicilio | 14:00 a 18:00",
-            "Domicilio | 18:00 a 21:00",
-            "Drive/Suc | 09:00 a 13:00",
-            "Drive/Suc | 13:00 a 18:00",
-            "Drive/Suc | 18:00 a 21:00"
-        ]
+            pdf.cell(sum(widths), row_height + 1.5,
+                     limpiar_texto_pdf(f"--- {llave} ---"), border=1, ln=True, align='C', fill=True)
 
-        for clave in orden_resumen:
-            if clave in resumen:
-                pdf.cell(0, 4.5, f"{clave}: [{resumen[clave]}]", ln=True, align='R')
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font("Times", '', font_size)
 
-        pdf.set_font("Times", 'B', font_size + 2)
-        pdf.cell(0, 8, f"TOTAL: [{len(df)}]", ln=True, align='R')
+            ultima_llave = llave
+            ultima_modalidad = modalidad
+            ultima_banda = banda
 
-        y_firma = pdf.get_y() - 35  
-        
-        pdf.set_xy(8, y_firma)
-        
-        pdf.set_font("Arial", "", 10)
-        
-        pdf.cell(0, 8, "Responsable del control:", 0, 1)
-        
-        pdf.set_x(8)
-        pdf.cell(0, 10, "Firma: __________________________", 0, 1)
-        
-        pdf.set_x(8)
-        pdf.cell(0, 8, "Nombre: _________________________", 0, 1)
+        pdf.cell(widths[0], row_height, limpiar_texto_pdf(str(row['NUMERO PEDIDO']).replace(".0", "")), border=1, align='C')
+        pdf.cell(widths[1], row_height, limpiar_texto_pdf(str(modalidad)[:10]), border=1)
+        pdf.cell(widths[2], row_height, limpiar_texto_pdf(str(banda)[:15]), border=1)
+        pdf.cell(widths[3], row_height, limpiar_texto_pdf(str(row['NOMBRE'])[:12]), border=1)
+        pdf.cell(widths[4], row_height, limpiar_texto_pdf(str(row['APELLIDO'])[:12]), border=1)
+        pdf.cell(widths[5], row_height, limpiar_texto_pdf(str(row['DIRECCIÓN'])[:30]), border=1)
 
-        if pdf.page_no() <= 2:
-            break
+        pdf.cell(widths[6], row_height, "", border=1)
+        pdf.cell(widths[7], row_height, "", border=1)
 
-        font_size -= 0.5
-        row_height -= 0.3
+        pdf.ln()
+
+    if ultima_llave in grupos_con_espacio:
+        insertar_filas_vacias(2)
+
+    if (pdf.h - pdf.get_y()) < 35:
+        pdf.add_page()
+
+    pdf.ln(4)
+
+    hora_arg = (datetime.utcnow() - timedelta(hours=3)).strftime("%H:%M")
+
+    pdf.set_font("Times", 'B', font_size + 1.5)
+    pdf.cell(0, 6, limpiar_texto_pdf(f"Informe de pedidos al momento [{hora_arg} hs]"), ln=True, align='R')
+
+    pdf.set_font("Times", '', font_size + 0.5)
+
+    orden_resumen = [
+        "Domicilio | 10:00 a 14:00",
+        "Domicilio | 14:00 a 18:00",
+        "Domicilio | 18:00 a 21:00",
+        "Drive/Suc | 09:00 a 13:00",
+        "Drive/Suc | 13:00 a 18:00",
+        "Drive/Suc | 18:00 a 21:00"
+    ]
+
+    for clave in orden_resumen:
+        if clave in resumen:
+            pdf.cell(0, 4.5, limpiar_texto_pdf(f"{clave}: [{resumen[clave]}]"), ln=True, align='R')
+
+    pdf.set_font("Times", 'B', font_size + 2)
+    pdf.cell(0, 8, limpiar_texto_pdf(f"TOTAL: [{len(df)}]"), ln=True, align='R')
+
+    y_firma = pdf.get_y() - 35  
+    
+    pdf.set_xy(8, y_firma)
+    
+    pdf.set_font("Arial", "", 10)
+    
+    pdf.cell(0, 8, "Responsable del control:", 0, 1)
+    
+    pdf.set_x(8)
+    pdf.cell(0, 10, "Firma: __________________________", 0, 1)
+    
+    pdf.set_x(8)
+    pdf.cell(0, 8, "Nombre: _________________________", 0, 1)
 
     return bytes(pdf.output())
